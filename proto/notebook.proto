@@ -1,0 +1,404 @@
+syntax = "proto3";
+
+package notebook;
+option go_package = "github.com/fbaez/grpc-go-android/proto;notebook";
+option java_multiple_files = true;
+option java_package = "com.example.notebook.grpc";
+
+import "google/protobuf/timestamp.proto";
+
+// Servicio principal del cuaderno inteligente
+service NotebookService {
+  // Gestión de ideas
+  rpc CreateIdea(CreateIdeaRequest) returns (CreateIdeaResponse);
+  rpc GetIdea(GetIdeaRequest) returns (GetIdeaResponse);
+  rpc ListIdeas(ListIdeasRequest) returns (ListIdeasResponse);
+  rpc UpdateIdea(UpdateIdeaRequest) returns (UpdateIdeaResponse);
+  rpc DeleteIdea(DeleteIdeaRequest) returns (DeleteIdeaResponse);
+  
+  // Gestión de recordatorios
+  rpc CreateReminder(CreateReminderRequest) returns (CreateReminderResponse);
+  rpc GetReminder(GetReminderRequest) returns (GetReminderResponse);
+  rpc ListReminders(ListRemindersRequest) returns (ListRemindersResponse);
+  rpc UpdateReminder(UpdateReminderRequest) returns (UpdateReminderResponse);
+  rpc DeleteReminder(DeleteReminderRequest) returns (DeleteReminderResponse);
+  
+  // Gestión de archivos
+  rpc UploadFile(stream UploadFileRequest) returns (UploadFileResponse);
+  rpc DownloadFile(DownloadFileRequest) returns (stream DownloadFileResponse);
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  
+  // Notificaciones
+  rpc SubscribeNotifications(NotificationSubscriptionRequest) returns (stream NotificationResponse);
+  
+  // Progreso y métricas
+  rpc UpdateProgress(UpdateProgressRequest) returns (UpdateProgressResponse);
+  rpc GetProgress(GetProgressRequest) returns (GetProgressResponse);
+}
+
+// Tipos de datos principales
+message Idea {
+  string id = 1;
+  string title = 2;
+  string content = 3;
+  repeated string tags = 4;
+  IdeaCategory category = 5;
+  IdeaStatus status = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  string user_id = 9;
+  repeated string related_ideas = 10;
+  int32 priority = 11;
+}
+
+message Reminder {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  google.protobuf.Timestamp scheduled_time = 4;
+  ReminderType type = 5;
+  ReminderStatus status = 6;
+  bool recurring = 7;
+  RecurrencePattern recurrence_pattern = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  string user_id = 11;
+  repeated string notification_channels = 12;
+}
+
+message FileInfo {
+  string id = 1;
+  string filename = 2;
+  string content_type = 3;
+  int64 size = 4;
+  string checksum = 5;
+  google.protobuf.Timestamp created_at = 6;
+  string user_id = 7;
+  bool compressed = 8;
+  string compression_type = 9;
+  string path = 10;
+}
+
+message Progress {
+  string id = 1;
+  string user_id = 2;
+  string project_name = 3;
+  string description = 4;
+  float completion_percentage = 5;
+  repeated ProgressMilestone milestones = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message ProgressMilestone {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  bool completed = 4;
+  google.protobuf.Timestamp due_date = 5;
+  google.protobuf.Timestamp completed_at = 6;
+}
+
+// Enums
+enum IdeaCategory {
+  IDEA_CATEGORY_UNSPECIFIED = 0;
+  IDEA_CATEGORY_BUSINESS = 1;
+  IDEA_CATEGORY_PERSONAL = 2;
+  IDEA_CATEGORY_TECHNICAL = 3;
+  IDEA_CATEGORY_CREATIVE = 4;
+  IDEA_CATEGORY_RESEARCH = 5;
+}
+
+enum IdeaStatus {
+  IDEA_STATUS_UNSPECIFIED = 0;
+  IDEA_STATUS_DRAFT = 1;
+  IDEA_STATUS_ACTIVE = 2;
+  IDEA_STATUS_ON_HOLD = 3;
+  IDEA_STATUS_COMPLETED = 4;
+  IDEA_STATUS_ARCHIVED = 5;
+}
+
+enum ReminderType {
+  REMINDER_TYPE_UNSPECIFIED = 0;
+  REMINDER_TYPE_TASK = 1;
+  REMINDER_TYPE_MEETING = 2;
+  REMINDER_TYPE_DEADLINE = 3;
+  REMINDER_TYPE_EVENT = 4;
+  REMINDER_TYPE_CALL = 5;
+}
+
+enum ReminderStatus {
+  REMINDER_STATUS_UNSPECIFIED = 0;
+  REMINDER_STATUS_PENDING = 1;
+  REMINDER_STATUS_ACTIVE = 2;
+  REMINDER_STATUS_COMPLETED = 3;
+  REMINDER_STATUS_CANCELLED = 4;
+  REMINDER_STATUS_OVERDUE = 5;
+}
+
+enum RecurrencePattern {
+  RECURRENCE_PATTERN_UNSPECIFIED = 0;
+  RECURRENCE_PATTERN_DAILY = 1;
+  RECURRENCE_PATTERN_WEEKLY = 2;
+  RECURRENCE_PATTERN_MONTHLY = 3;
+  RECURRENCE_PATTERN_YEARLY = 4;
+  RECURRENCE_PATTERN_CUSTOM = 5;
+}
+
+// Requests y Responses para Ideas
+message CreateIdeaRequest {
+  string title = 1;
+  string content = 2;
+  repeated string tags = 3;
+  IdeaCategory category = 4;
+  int32 priority = 5;
+  string user_id = 6;
+}
+
+message CreateIdeaResponse {
+  Idea idea = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message GetIdeaRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message GetIdeaResponse {
+  Idea idea = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message ListIdeasRequest {
+  string user_id = 1;
+  IdeaCategory category = 2;
+  IdeaStatus status = 3;
+  repeated string tags = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+  string sort_by = 7;
+  bool sort_desc = 8;
+}
+
+message ListIdeasResponse {
+  repeated Idea ideas = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  bool success = 5;
+  string message = 6;
+}
+
+message UpdateIdeaRequest {
+  string id = 1;
+  string user_id = 2;
+  string title = 3;
+  string content = 4;
+  repeated string tags = 5;
+  IdeaCategory category = 6;
+  IdeaStatus status = 7;
+  int32 priority = 8;
+}
+
+message UpdateIdeaResponse {
+  Idea idea = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message DeleteIdeaRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message DeleteIdeaResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Requests y Responses para Recordatorios
+message CreateReminderRequest {
+  string title = 1;
+  string description = 2;
+  google.protobuf.Timestamp scheduled_time = 3;
+  ReminderType type = 4;
+  bool recurring = 5;
+  RecurrencePattern recurrence_pattern = 6;
+  string user_id = 7;
+  repeated string notification_channels = 8;
+}
+
+message CreateReminderResponse {
+  Reminder reminder = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message GetReminderRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message GetReminderResponse {
+  Reminder reminder = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message ListRemindersRequest {
+  string user_id = 1;
+  ReminderType type = 2;
+  ReminderStatus status = 3;
+  google.protobuf.Timestamp from_date = 4;
+  google.protobuf.Timestamp to_date = 5;
+  int32 page = 6;
+  int32 page_size = 7;
+}
+
+message ListRemindersResponse {
+  repeated Reminder reminders = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  bool success = 5;
+  string message = 6;
+}
+
+message UpdateReminderRequest {
+  string id = 1;
+  string user_id = 2;
+  string title = 3;
+  string description = 4;
+  google.protobuf.Timestamp scheduled_time = 5;
+  ReminderType type = 6;
+  ReminderStatus status = 7;
+  bool recurring = 8;
+  RecurrencePattern recurrence_pattern = 9;
+}
+
+message UpdateReminderResponse {
+  Reminder reminder = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message DeleteReminderRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message DeleteReminderResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Requests y Responses para Archivos
+message UploadFileRequest {
+  oneof data {
+    FileMetadata metadata = 1;
+    bytes chunk = 2;
+  }
+}
+
+message FileMetadata {
+  string filename = 1;
+  string content_type = 2;
+  int64 total_size = 3;
+  string user_id = 4;
+  bool compress = 5;
+  string compression_type = 6;
+}
+
+message UploadFileResponse {
+  FileInfo file_info = 1;
+  bool success = 2;
+  string message = 3;
+  string upload_id = 4;
+}
+
+message DownloadFileRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+message DownloadFileResponse {
+  oneof data {
+    FileInfo file_info = 1;
+    bytes chunk = 2;
+  }
+}
+
+message DeleteFileRequest {
+  string file_id = 1;
+  string user_id = 2;
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListFilesRequest {
+  string user_id = 1;
+  string content_type_filter = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  string sort_by = 5;
+  bool sort_desc = 6;
+}
+
+message ListFilesResponse {
+  repeated FileInfo files = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  bool success = 5;
+  string message = 6;
+}
+
+// Notificaciones
+message NotificationSubscriptionRequest {
+  string user_id = 1;
+  repeated string channels = 2;
+}
+
+message NotificationResponse {
+  string id = 1;
+  string title = 2;
+  string message = 3;
+  string type = 4;
+  google.protobuf.Timestamp created_at = 5;
+  string user_id = 6;
+  map<string, string> metadata = 7;
+}
+
+// Progreso
+message UpdateProgressRequest {
+  string id = 1;
+  string user_id = 2;
+  string project_name = 3;
+  string description = 4;
+  float completion_percentage = 5;
+  repeated ProgressMilestone milestones = 6;
+}
+
+message UpdateProgressResponse {
+  Progress progress = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message GetProgressRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message GetProgressResponse {
+  Progress progress = 1;
+  bool success = 2;
+  string message = 3;
+}
