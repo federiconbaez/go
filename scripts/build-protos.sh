@@ -36,7 +36,7 @@ if [ ! -d "$PROTO_DIR" ] || [ -z "$(ls -A "$PROTO_DIR"/*.proto 2>/dev/null)" ]; 
     exit 1
 fi
 
-echo -e "${YELLOW}📁 Directorios:${NC}"
+echo -e "${YELLOW} Directorios:${NC}"
 echo "  Proto source: $PROTO_DIR"
 echo "  Go output: $GO_OUT_DIR"
 echo "  Android proto: $ANDROID_PROTO_DIR"
@@ -46,7 +46,7 @@ mkdir -p "$GO_OUT_DIR"
 mkdir -p "$ANDROID_PROTO_DIR"
 
 # Copiar archivos .proto para Android
-echo -e "${GREEN}📱 Copiando archivos .proto para Android...${NC}"
+echo -e "${GREEN} Copiando archivos .proto para Android...${NC}"
 cp "$PROTO_DIR"/*.proto "$ANDROID_PROTO_DIR/"
 
 # Generar código Go
@@ -71,7 +71,7 @@ protoc --proto_path="$PROTO_DIR" \
     --go-grpc_opt=paths=source_relative \
     "$PROTO_DIR"/*.proto
 
-echo -e "${GREEN}✅ Código Go generado exitosamente${NC}"
+echo -e "${GREEN} Código Go generado exitosamente${NC}"
 
 # Verificar archivos generados
 echo -e "${YELLOW}📄 Archivos generados:${NC}"
@@ -96,7 +96,7 @@ if [ "$1" = "--build-android" ]; then
     cd "$PROJECT_ROOT/client-android"
     if [ -f "./gradlew" ]; then
         ./gradlew build
-        echo -e "${GREEN}✅ Proyecto Android construido exitosamente${NC}"
+        echo -e "${GREEN} Proyecto Android construido exitosamente${NC}"
     else
         echo -e "${YELLOW}⚠️  No se encontró gradlew. Construye manualmente el proyecto Android${NC}"
     fi
