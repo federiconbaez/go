@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"github.com/fbaez/grpc-go-android/server-go/internal/domain/entities"
+	https://github.com/federiconbaez/gogrpc-go-android/server-go/internal/domain/entities"
 	"github.com/google/uuid"
 )
 

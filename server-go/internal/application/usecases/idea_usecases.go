@@ -3,8 +3,8 @@ package usecases
 import (
 	"context"
 
-	"github.com/fbaez/grpc-go-android/server-go/internal/domain/entities"
-	"github.com/fbaez/grpc-go-android/server-go/internal/domain/ports"
+	https://github.com/federiconbaez/gogrpc-go-android/server-go/internal/domain/entities"
+	https://github.com/federiconbaez/gogrpc-go-android/server-go/internal/domain/ports"
 	"github.com/google/uuid"
 )
 
