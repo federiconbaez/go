@@ -1,0 +1,1683 @@
+syntax = "proto3";
+
+package security;
+
+option go_package = "github.com/example/notebook/proto/security";
+option java_package = "com.example.notebook.proto.security";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+// Security management service for authentication, authorization, and monitoring
+service SecurityService {
+  // Authentication
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  
+  // Authorization
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc GrantPermission(GrantPermissionRequest) returns (GrantPermissionResponse);
+  rpc RevokePermission(RevokePermissionRequest) returns (RevokePermissionResponse);
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+  
+  // Multi-factor authentication
+  rpc SetupMFA(SetupMFARequest) returns (SetupMFAResponse);
+  rpc VerifyMFA(VerifyMFARequest) returns (VerifyMFAResponse);
+  rpc DisableMFA(DisableMFARequest) returns (DisableMFAResponse);
+  rpc GetMFAMethods(GetMFAMethodsRequest) returns (GetMFAMethodsResponse);
+  
+  // Password management
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc ValidatePassword(ValidatePasswordRequest) returns (ValidatePasswordResponse);
+  
+  // Session management
+  rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  rpc InvalidateSession(InvalidateSessionRequest) returns (InvalidateSessionResponse);
+  rpc ListActiveSessions(ListActiveSessionsRequest) returns (ListActiveSessionsResponse);
+  
+  // Audit and monitoring
+  rpc LogSecurityEvent(LogSecurityEventRequest) returns (LogSecurityEventResponse);
+  rpc GetSecurityEvents(GetSecurityEventsRequest) returns (GetSecurityEventsResponse);
+  rpc GetSecurityMetrics(GetSecurityMetricsRequest) returns (GetSecurityMetricsResponse);
+  
+  // Threat detection
+  rpc AnalyzeThreat(AnalyzeThreatRequest) returns (AnalyzeThreatResponse);
+  rpc GetThreatAlerts(GetThreatAlertsRequest) returns (GetThreatAlertsResponse);
+  rpc UpdateThreatRules(UpdateThreatRulesRequest) returns (UpdateThreatRulesResponse);
+  
+  // Encryption and key management
+  rpc GenerateKey(GenerateKeyRequest) returns (GenerateKeyResponse);
+  rpc EncryptData(EncryptDataRequest) returns (EncryptDataResponse);
+  rpc DecryptData(DecryptDataRequest) returns (DecryptDataResponse);
+  rpc RotateKeys(RotateKeysRequest) returns (RotateKeysResponse);
+  
+  // Compliance and reporting
+  rpc GenerateComplianceReport(GenerateComplianceReportRequest) returns (GenerateComplianceReportResponse);
+  rpc GetComplianceStatus(GetComplianceStatusRequest) returns (GetComplianceStatusResponse);
+  
+  // Certificate management
+  rpc IssueCertificate(IssueCertificateRequest) returns (IssueCertificateResponse);
+  rpc RevokeCertificate(RevokeCertificateRequest) returns (RevokeCertificateResponse);
+  rpc ValidateCertificate(ValidateCertificateRequest) returns (ValidateCertificateResponse);
+}
+
+// Authentication messages
+message AuthenticateRequest {
+  AuthenticationMethod method = 1;
+  Credentials credentials = 2;
+  ClientInfo client_info = 3;
+  AuthenticationOptions options = 4;
+  string challenge_response = 5;
+  DeviceFingerprint device_fingerprint = 6;
+}
+
+enum AuthenticationMethod {
+  PASSWORD = 0;
+  TOKEN = 1;
+  CERTIFICATE = 2;
+  BIOMETRIC = 3;
+  SSO = 4;
+  API_KEY = 5;
+  OAUTH = 6;
+  LDAP = 7;
+}
+
+message Credentials {
+  string username = 1;
+  string password = 2;
+  string token = 3;
+  bytes certificate = 4;
+  BiometricData biometric = 5;
+  SSOCredentials sso = 6;
+  string api_key = 7;
+  OAuthCredentials oauth = 8;
+}
+
+message BiometricData {
+  BiometricType type = 1;
+  bytes data = 2;
+  string template_id = 3;
+  float confidence_score = 4;
+}
+
+enum BiometricType {
+  FINGERPRINT = 0;
+  FACE = 1;
+  IRIS = 2;
+  VOICE = 3;
+  PALM = 4;
+}
+
+message SSOCredentials {
+  string provider = 1;
+  string assertion = 2;
+  string session_token = 3;
+  map<string, string> attributes = 4;
+}
+
+message OAuthCredentials {
+  string provider = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  string authorization_code = 4;
+  string state = 5;
+}
+
+message ClientInfo {
+  string client_id = 1;
+  string client_version = 2;
+  string platform = 3;
+  string user_agent = 4;
+  string ip_address = 5;
+  GeoLocation location = 6;
+  NetworkInfo network = 7;
+}
+
+message GeoLocation {
+  double latitude = 1;
+  double longitude = 2;
+  string country = 3;
+  string region = 4;
+  string city = 5;
+  string timezone = 6;
+}
+
+message NetworkInfo {
+  string provider = 1;
+  string connection_type = 2;
+  bool vpn_detected = 3;
+  bool proxy_detected = 4;
+  ThreatLevel threat_level = 5;
+}
+
+enum ThreatLevel {
+  NONE = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+}
+
+message AuthenticationOptions {
+  bool require_mfa = 1;
+  bool remember_device = 2;
+  google.protobuf.Duration session_duration = 3;
+  bool single_session = 4;
+  RiskAssessment risk_assessment = 5;
+}
+
+message RiskAssessment {
+  bool enable_behavioral_analysis = 1;
+  bool enable_device_profiling = 2;
+  bool enable_location_analysis = 3;
+  ThreatLevel acceptable_risk = 4;
+}
+
+message DeviceFingerprint {
+  string device_id = 1;
+  string hardware_id = 2;
+  string screen_resolution = 3;
+  string timezone = 4;
+  string language = 5;
+  repeated string fonts = 6;
+  repeated string plugins = 7;
+  CanvasFingerprint canvas = 8;
+  AudioFingerprint audio = 9;
+}
+
+message CanvasFingerprint {
+  string hash = 1;
+  int32 width = 2;
+  int32 height = 3;
+}
+
+message AudioFingerprint {
+  string hash = 1;
+  float frequency_data = 2;
+}
+
+message AuthenticateResponse {
+  bool success = 1;
+  string error_message = 2;
+  AuthenticationResult result = 3;
+  SecurityToken token = 4;
+  UserProfile user_profile = 5;
+  repeated SecurityChallenge challenges = 6;
+  RiskScore risk_score = 7;
+}
+
+message AuthenticationResult {
+  AuthenticationStatus status = 1;
+  string user_id = 2;
+  repeated string roles = 3;
+  repeated Permission permissions = 4;
+  google.protobuf.Timestamp authenticated_at = 5;
+  string session_id = 6;
+  map<string, string> metadata = 7;
+}
+
+enum AuthenticationStatus {
+  SUCCESS = 0;
+  FAILED = 1;
+  REQUIRES_MFA = 2;
+  REQUIRES_PASSWORD_CHANGE = 3;
+  ACCOUNT_LOCKED = 4;
+  ACCOUNT_DISABLED = 5;
+  EXPIRED_CREDENTIALS = 6;
+  SUSPICIOUS_ACTIVITY = 7;
+}
+
+message SecurityToken {
+  string access_token = 1;
+  string refresh_token = 2;
+  TokenType type = 3;
+  google.protobuf.Timestamp issued_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  repeated string scopes = 6;
+  string issuer = 7;
+  string audience = 8;
+  map<string, google.protobuf.Any> claims = 9;
+}
+
+enum TokenType {
+  BEARER = 0;
+  JWT = 1;
+  OAUTH = 2;
+  SAML = 3;
+  OPAQUE = 4;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string display_name = 4;
+  repeated string roles = 5;
+  repeated string groups = 6;
+  map<string, string> attributes = 7;
+  SecuritySettings security_settings = 8;
+  AccountStatus status = 9;
+}
+
+enum AccountStatus {
+  ACTIVE = 0;
+  INACTIVE = 1;
+  SUSPENDED = 2;
+  LOCKED = 3;
+  PENDING_VERIFICATION = 4;
+  DISABLED = 5;
+}
+
+message SecuritySettings {
+  bool mfa_enabled = 1;
+  repeated MFAMethod mfa_methods = 2;
+  PasswordPolicy password_policy = 3;
+  SessionSettings session_settings = 4;
+  NotificationSettings notification_settings = 5;
+}
+
+message SecurityChallenge {
+  string challenge_id = 1;
+  ChallengeType type = 2;
+  string prompt = 3;
+  map<string, google.protobuf.Any> parameters = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  int32 max_attempts = 6;
+}
+
+enum ChallengeType {
+  CAPTCHA = 0;
+  SMS_CODE = 1;
+  EMAIL_CODE = 2;
+  PUSH_NOTIFICATION = 3;
+  SECURITY_QUESTION = 4;
+  BIOMETRIC_VERIFICATION = 5;
+}
+
+message RiskScore {
+  float overall_score = 1;
+  RiskLevel level = 2;
+  repeated RiskFactor factors = 3;
+  string assessment_id = 4;
+  google.protobuf.Timestamp calculated_at = 5;
+}
+
+enum RiskLevel {
+  VERY_LOW = 0;
+  LOW = 1;
+  MODERATE = 2;
+  HIGH = 3;
+  VERY_HIGH = 4;
+}
+
+message RiskFactor {
+  string name = 1;
+  float score = 2;
+  float weight = 3;
+  string description = 4;
+  RiskFactorType type = 5;
+}
+
+enum RiskFactorType {
+  BEHAVIORAL = 0;
+  CONTEXTUAL = 1;
+  REPUTATION = 2;
+  DEVICE = 3;
+  NETWORK = 4;
+}
+
+// Token management
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  ClientInfo client_info = 2;
+  repeated string scopes = 3;
+}
+
+message RefreshTokenResponse {
+  bool success = 1;
+  string error_message = 2;
+  SecurityToken new_token = 3;
+  google.protobuf.Timestamp issued_at = 4;
+}
+
+message RevokeTokenRequest {
+  string token = 1;
+  TokenType token_type = 2;
+  string user_id = 3;
+  string reason = 4;
+}
+
+message RevokeTokenResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp revoked_at = 3;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+  TokenType token_type = 2;
+  repeated string required_scopes = 3;
+  bool check_expiry = 4;
+  bool check_revocation = 5;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string error_message = 2;
+  TokenValidation validation = 3;
+  UserProfile user_profile = 4;
+}
+
+message TokenValidation {
+  bool expired = 1;
+  bool revoked = 2;
+  bool malformed = 3;
+  repeated string scopes = 4;
+  google.protobuf.Timestamp validated_at = 5;
+  string validation_id = 6;
+}
+
+// Authorization messages
+message CheckPermissionRequest {
+  string user_id = 1;
+  string resource = 2;
+  string action = 3;
+  map<string, string> context = 4;
+  PermissionCheckMode mode = 5;
+}
+
+enum PermissionCheckMode {
+  STRICT = 0;
+  PERMISSIVE = 1;
+  CACHED = 2;
+  REAL_TIME = 3;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2;
+  PermissionDecision decision = 3;
+  repeated Permission applicable_permissions = 4;
+  google.protobuf.Timestamp checked_at = 5;
+}
+
+message PermissionDecision {
+  DecisionResult result = 1;
+  repeated PolicyEvaluation policy_evaluations = 2;
+  string decision_id = 3;
+  google.protobuf.Duration evaluation_time = 4;
+}
+
+enum DecisionResult {
+  ALLOW = 0;
+  DENY = 1;
+  INDETERMINATE = 2;
+  NOT_APPLICABLE = 3;
+}
+
+message PolicyEvaluation {
+  string policy_id = 1;
+  string policy_name = 2;
+  DecisionResult result = 3;
+  string reason = 4;
+  map<string, google.protobuf.Any> context = 5;
+}
+
+message GrantPermissionRequest {
+  string user_id = 1;
+  string resource = 2;
+  repeated string actions = 3;
+  PermissionScope scope = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  string granted_by = 6;
+  string reason = 7;
+}
+
+message GrantPermissionResponse {
+  bool success = 1;
+  string error_message = 2;
+  Permission granted_permission = 3;
+  google.protobuf.Timestamp granted_at = 4;
+}
+
+message RevokePermissionRequest {
+  string user_id = 1;
+  string permission_id = 2;
+  string resource = 3;
+  repeated string actions = 4;
+  string revoked_by = 5;
+  string reason = 6;
+}
+
+message RevokePermissionResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp revoked_at = 3;
+  int32 revoked_count = 4;
+}
+
+message ListPermissionsRequest {
+  string user_id = 1;
+  string resource_filter = 2;
+  string action_filter = 3;
+  bool include_inherited = 4;
+  bool include_expired = 5;
+  int32 limit = 6;
+  string cursor = 7;
+}
+
+message ListPermissionsResponse {
+  repeated Permission permissions = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+message Permission {
+  string id = 1;
+  string user_id = 2;
+  string resource = 3;
+  repeated string actions = 4;
+  PermissionScope scope = 5;
+  PermissionType type = 6;
+  google.protobuf.Timestamp granted_at = 7;
+  google.protobuf.Timestamp expires_at = 8;
+  string granted_by = 9;
+  bool inherited = 10;
+  string source = 11;
+  map<string, string> conditions = 12;
+}
+
+enum PermissionScope {
+  GLOBAL = 0;
+  ORGANIZATION = 1;
+  WORKSPACE = 2;
+  PROJECT = 3;
+  RESOURCE = 4;
+}
+
+enum PermissionType {
+  EXPLICIT = 0;
+  INHERITED = 1;
+  TEMPORARY = 2;
+  CONDITIONAL = 3;
+}
+
+// Multi-factor authentication
+message SetupMFARequest {
+  string user_id = 1;
+  MFAMethod method = 2;
+  MFAConfiguration configuration = 3;
+  string verification_code = 4;
+}
+
+message SetupMFAResponse {
+  bool success = 1;
+  string error_message = 2;
+  MFASetupResult result = 3;
+  repeated string backup_codes = 4;
+  bytes qr_code = 5;
+}
+
+message MFAMethod {
+  string id = 1;
+  MFAType type = 2;
+  string name = 3;
+  bool enabled = 4;
+  bool primary = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp last_used = 7;
+  MFAConfiguration configuration = 8;
+}
+
+enum MFAType {
+  TOTP = 0;
+  SMS = 1;
+  EMAIL = 2;
+  PUSH = 3;
+  HARDWARE_TOKEN = 4;
+  BACKUP_CODES = 5;
+  BIOMETRIC = 6;
+}
+
+message MFAConfiguration {
+  TOTPConfig totp = 1;
+  SMSConfig sms = 2;
+  EmailConfig email = 3;
+  PushConfig push = 4;
+  HardwareTokenConfig hardware = 5;
+  BiometricConfig biometric = 6;
+}
+
+message TOTPConfig {
+  string secret = 1;
+  int32 period = 2;
+  int32 digits = 3;
+  string algorithm = 4;
+  string issuer = 5;
+  string account_name = 6;
+}
+
+message SMSConfig {
+  string phone_number = 1;
+  bool verified = 2;
+  int32 code_length = 3;
+  google.protobuf.Duration code_expiry = 4;
+}
+
+message EmailConfig {
+  string email_address = 1;
+  bool verified = 2;
+  int32 code_length = 3;
+  google.protobuf.Duration code_expiry = 4;
+}
+
+message PushConfig {
+  string device_token = 1;
+  string app_id = 2;
+  bool verified = 3;
+  PushProvider provider = 4;
+}
+
+enum PushProvider {
+  FCM = 0;
+  APNS = 1;
+  WNS = 2;
+  CUSTOM = 3;
+}
+
+message HardwareTokenConfig {
+  string serial_number = 1;
+  string model = 2;
+  TokenProtocol protocol = 3;
+  bool synchronized = 4;
+}
+
+enum TokenProtocol {
+  HOTP = 0;
+  TOTP = 1;
+  U2F = 2;
+  FIDO2 = 3;
+}
+
+message BiometricConfig {
+  BiometricType type = 1;
+  string template_id = 2;
+  bool enrolled = 3;
+  float threshold = 4;
+}
+
+message MFASetupResult {
+  string method_id = 1;
+  MFASetupStatus status = 2;
+  string verification_url = 3;
+  string secret = 4;
+  repeated string backup_codes = 5;
+}
+
+enum MFASetupStatus {
+  PENDING_VERIFICATION = 0;
+  ACTIVE = 1;
+  FAILED = 2;
+  DISABLED = 3;
+}
+
+message VerifyMFARequest {
+  string user_id = 1;
+  string method_id = 2;
+  string code = 3;
+  string challenge_id = 4;
+  BiometricData biometric_data = 5;
+}
+
+message VerifyMFAResponse {
+  bool success = 1;
+  string error_message = 2;
+  MFAVerificationResult result = 3;
+  int32 remaining_attempts = 4;
+}
+
+message MFAVerificationResult {
+  MFAVerificationStatus status = 1;
+  google.protobuf.Timestamp verified_at = 2;
+  string verification_id = 3;
+  google.protobuf.Duration valid_for = 4;
+}
+
+enum MFAVerificationStatus {
+  VERIFIED = 0;
+  INVALID_CODE = 1;
+  EXPIRED_CODE = 2;
+  TOO_MANY_ATTEMPTS = 3;
+  METHOD_DISABLED = 4;
+}
+
+message DisableMFARequest {
+  string user_id = 1;
+  string method_id = 2;
+  string verification_code = 3;
+  string reason = 4;
+}
+
+message DisableMFAResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp disabled_at = 3;
+}
+
+message GetMFAMethodsRequest {
+  string user_id = 1;
+  bool include_disabled = 2;
+}
+
+message GetMFAMethodsResponse {
+  repeated MFAMethod methods = 1;
+  bool mfa_required = 2;
+  MFAPolicy policy = 3;
+}
+
+message MFAPolicy {
+  bool required = 1;
+  int32 min_methods = 2;
+  repeated MFAType allowed_types = 3;
+  google.protobuf.Duration grace_period = 4;
+  bool allow_backup_codes = 5;
+}
+
+// Password management
+message ChangePasswordRequest {
+  string user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
+  bool invalidate_sessions = 4;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string error_message = 2;
+  PasswordStrength strength = 3;
+  google.protobuf.Timestamp changed_at = 4;
+}
+
+message ResetPasswordRequest {
+  string email_or_username = 1;
+  string reset_token = 2;
+  string new_password = 3;
+  ResetMethod method = 4;
+}
+
+enum ResetMethod {
+  EMAIL_LINK = 0;
+  SMS_CODE = 1;
+  SECURITY_QUESTIONS = 2;
+  ADMIN_RESET = 3;
+}
+
+message ResetPasswordResponse {
+  bool success = 1;
+  string error_message = 2;
+  string reset_id = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message ValidatePasswordRequest {
+  string password = 1;
+  string user_id = 2;
+  PasswordPolicy policy = 3;
+}
+
+message ValidatePasswordResponse {
+  bool valid = 1;
+  PasswordStrength strength = 2;
+  repeated string violations = 3;
+  repeated string suggestions = 4;
+}
+
+message PasswordPolicy {
+  int32 min_length = 1;
+  int32 max_length = 2;
+  bool require_uppercase = 3;
+  bool require_lowercase = 4;
+  bool require_digits = 5;
+  bool require_special_chars = 6;
+  int32 max_repeating_chars = 7;
+  bool prevent_common_passwords = 8;
+  bool prevent_personal_info = 9;
+  int32 history_count = 10;
+  google.protobuf.Duration expiry_period = 11;
+}
+
+message PasswordStrength {
+  StrengthLevel level = 1;
+  float score = 2;
+  string feedback = 3;
+  google.protobuf.Duration crack_time = 4;
+}
+
+enum StrengthLevel {
+  VERY_WEAK = 0;
+  WEAK = 1;
+  FAIR = 2;
+  STRONG = 3;
+  VERY_STRONG = 4;
+}
+
+// Session management
+message CreateSessionRequest {
+  string user_id = 1;
+  ClientInfo client_info = 2;
+  SessionOptions options = 3;
+  SecurityToken token = 4;
+}
+
+message CreateSessionResponse {
+  bool success = 1;
+  string error_message = 2;
+  Session session = 3;
+}
+
+message GetSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+  bool include_activity = 3;
+}
+
+message GetSessionResponse {
+  Session session = 1;
+  repeated SessionActivity activities = 2;
+}
+
+message InvalidateSessionRequest {
+  string session_id = 1;
+  string user_id = 2;
+  InvalidationReason reason = 3;
+  bool all_sessions = 4;
+}
+
+enum InvalidationReason {
+  USER_LOGOUT = 0;
+  ADMIN_ACTION = 1;
+  SECURITY_POLICY = 2;
+  SESSION_TIMEOUT = 3;
+  SUSPICIOUS_ACTIVITY = 4;
+}
+
+message InvalidateSessionResponse {
+  bool success = 1;
+  string error_message = 2;
+  int32 invalidated_sessions = 3;
+  google.protobuf.Timestamp invalidated_at = 4;
+}
+
+message ListActiveSessionsRequest {
+  string user_id = 1;
+  bool include_current = 2;
+  SessionFilter filter = 3;
+  int32 limit = 4;
+  string cursor = 5;
+}
+
+message ListActiveSessionsResponse {
+  repeated Session sessions = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+message Session {
+  string id = 1;
+  string user_id = 2;
+  SessionStatus status = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_activity = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  ClientInfo client_info = 7;
+  SecurityContext security_context = 8;
+  SessionMetrics metrics = 9;
+}
+
+enum SessionStatus {
+  ACTIVE = 0;
+  EXPIRED = 1;
+  INVALIDATED = 2;
+  SUSPICIOUS = 3;
+}
+
+message SecurityContext {
+  AuthenticationMethod auth_method = 1;
+  bool mfa_verified = 2;
+  RiskScore risk_score = 3;
+  repeated string permissions = 4;
+  string ip_address = 5;
+  GeoLocation location = 6;
+}
+
+message SessionMetrics {
+  int64 requests_count = 1;
+  int64 bytes_transferred = 2;
+  google.protobuf.Duration total_duration = 3;
+  google.protobuf.Timestamp last_request = 4;
+}
+
+message SessionActivity {
+  string id = 1;
+  ActivityType type = 2;
+  string description = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  string ip_address = 5;
+  string resource = 6;
+  string action = 7;
+  map<string, string> metadata = 8;
+}
+
+enum ActivityType {
+  LOGIN = 0;
+  LOGOUT = 1;
+  API_CALL = 2;
+  RESOURCE_ACCESS = 3;
+  PERMISSION_CHECK = 4;
+  MFA_VERIFICATION = 5;
+  SUSPICIOUS_BEHAVIOR = 6;
+}
+
+message SessionOptions {
+  google.protobuf.Duration duration = 1;
+  bool sliding_expiration = 2;
+  bool single_session = 3;
+  bool track_activity = 4;
+  RiskAssessment risk_assessment = 5;
+}
+
+message SessionFilter {
+  repeated SessionStatus statuses = 1;
+  repeated AuthenticationMethod auth_methods = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+  google.protobuf.Timestamp created_after = 5;
+  google.protobuf.Timestamp created_before = 6;
+}
+
+// Security events and monitoring
+message LogSecurityEventRequest {
+  SecurityEvent event = 1;
+  bool async_processing = 2;
+}
+
+message LogSecurityEventResponse {
+  bool success = 1;
+  string error_message = 2;
+  string event_id = 3;
+  google.protobuf.Timestamp logged_at = 4;
+}
+
+message GetSecurityEventsRequest {
+  SecurityEventFilter filter = 1;
+  int32 limit = 2;
+  string cursor = 3;
+  bool include_metadata = 4;
+  SortOptions sort_options = 5;
+}
+
+message GetSecurityEventsResponse {
+  repeated SecurityEvent events = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+  EventsSummary summary = 5;
+}
+
+message GetSecurityMetricsRequest {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+  MetricsGranularity granularity = 3;
+  repeated string metric_types = 4;
+}
+
+message GetSecurityMetricsResponse {
+  repeated MetricDataPoint metrics = 1;
+  SecuritySummary summary = 2;
+  google.protobuf.Timestamp generated_at = 3;
+}
+
+message SecurityEvent {
+  string id = 1;
+  SecurityEventType type = 2;
+  Severity severity = 3;
+  string title = 4;
+  string description = 5;
+  string user_id = 6;
+  string session_id = 7;
+  string resource = 8;
+  string action = 9;
+  EventOutcome outcome = 10;
+  google.protobuf.Timestamp timestamp = 11;
+  ClientInfo client_info = 12;
+  map<string, google.protobuf.Any> metadata = 13;
+  repeated string tags = 14;
+  string correlation_id = 15;
+}
+
+enum SecurityEventType {
+  AUTHENTICATION_SUCCESS = 0;
+  AUTHENTICATION_FAILURE = 1;
+  AUTHORIZATION_DENIED = 2;
+  MFA_CHALLENGE = 3;
+  PASSWORD_CHANGE = 4;
+  ACCOUNT_LOCKOUT = 5;
+  SUSPICIOUS_LOGIN = 6;
+  PRIVILEGE_ESCALATION = 7;
+  DATA_ACCESS = 8;
+  DATA_MODIFICATION = 9;
+  SESSION_CREATED = 10;
+  SESSION_TERMINATED = 11;
+  THREAT_DETECTED = 12;
+  COMPLIANCE_VIOLATION = 13;
+  SYSTEM_ANOMALY = 14;
+}
+
+enum Severity {
+  INFO = 0;
+  WARNING = 1;
+  ERROR = 2;
+  CRITICAL = 3;
+}
+
+enum EventOutcome {
+  SUCCESS = 0;
+  FAILURE = 1;
+  BLOCKED = 2;
+  ALLOWED = 3;
+  PENDING = 4;
+}
+
+message SecurityEventFilter {
+  repeated SecurityEventType types = 1;
+  repeated Severity severities = 2;
+  repeated string user_ids = 3;
+  repeated string session_ids = 4;
+  string resource = 5;
+  string action = 6;
+  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp end_time = 8;
+  string search_query = 9;
+  repeated string tags = 10;
+}
+
+message EventsSummary {
+  int64 total_events = 1;
+  map<string, int64> by_type = 2;
+  map<string, int64> by_severity = 3;
+  map<string, int64> by_outcome = 4;
+  TrendData trend = 5;
+}
+
+message TrendData {
+  TrendDirection direction = 1;
+  float change_percentage = 2;
+  google.protobuf.Duration comparison_period = 3;
+}
+
+enum TrendDirection {
+  STABLE = 0;
+  INCREASING = 1;
+  DECREASING = 2;
+}
+
+enum MetricsGranularity {
+  MINUTE = 0;
+  HOUR = 1;
+  DAY = 2;
+  WEEK = 3;
+  MONTH = 4;
+}
+
+message MetricDataPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  string metric_name = 2;
+  double value = 3;
+  map<string, string> labels = 4;
+}
+
+message SecuritySummary {
+  int64 total_authentications = 1;
+  int64 failed_authentications = 2;
+  int64 successful_authentications = 3;
+  double authentication_success_rate = 4;
+  int64 blocked_attacks = 5;
+  int64 active_sessions = 6;
+  int64 mfa_challenges = 7;
+  ThreatLevel current_threat_level = 8;
+}
+
+message SortOptions {
+  SortField field = 1;
+  SortDirection direction = 2;
+}
+
+enum SortField {
+  TIMESTAMP = 0;
+  SEVERITY = 1;
+  EVENT_TYPE = 2;
+  USER_ID = 3;
+}
+
+enum SortDirection {
+  ASC = 0;
+  DESC = 1;
+}
+
+// Threat detection and analysis
+message AnalyzeThreatRequest {
+  ThreatIndicator indicator = 1;
+  AnalysisContext context = 2;
+  AnalysisOptions options = 3;
+}
+
+message AnalyzeThreatResponse {
+  ThreatAnalysis analysis = 1;
+  repeated ThreatRecommendation recommendations = 2;
+  bool immediate_action_required = 3;
+}
+
+message GetThreatAlertsRequest {
+  ThreatAlertFilter filter = 1;
+  int32 limit = 2;
+  string cursor = 3;
+  bool include_resolved = 4;
+}
+
+message GetThreatAlertsResponse {
+  repeated ThreatAlert alerts = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+message UpdateThreatRulesRequest {
+  repeated ThreatRule rules = 1;
+  string updated_by = 2;
+  bool validate_rules = 3;
+}
+
+message UpdateThreatRulesResponse {
+  bool success = 1;
+  string error_message = 2;
+  int32 updated_rules = 3;
+  repeated RuleValidationError validation_errors = 4;
+}
+
+message ThreatIndicator {
+  IndicatorType type = 1;
+  string value = 2;
+  ThreatLevel severity = 3;
+  string source = 4;
+  google.protobuf.Timestamp observed_at = 5;
+  map<string, string> attributes = 6;
+}
+
+enum IndicatorType {
+  IP_ADDRESS = 0;
+  DOMAIN = 1;
+  URL = 2;
+  FILE_HASH = 3;
+  EMAIL_ADDRESS = 4;
+  USER_AGENT = 5;
+  BEHAVIOR_PATTERN = 6;
+}
+
+message AnalysisContext {
+  string user_id = 1;
+  string session_id = 2;
+  ClientInfo client_info = 3;
+  repeated SecurityEvent related_events = 4;
+  map<string, string> environment = 5;
+}
+
+message AnalysisOptions {
+  bool deep_analysis = 1;
+  bool real_time_analysis = 2;
+  google.protobuf.Duration analysis_timeout = 3;
+  repeated string analysis_engines = 4;
+}
+
+message ThreatAnalysis {
+  string analysis_id = 1;
+  ThreatLevel threat_level = 2;
+  float confidence_score = 3;
+  repeated ThreatSignature signatures = 4;
+  repeated AnomalyIndicator anomalies = 5;
+  RiskAssessmentResult risk_assessment = 6;
+  google.protobuf.Timestamp analyzed_at = 7;
+  google.protobuf.Duration analysis_duration = 8;
+}
+
+message ThreatSignature {
+  string signature_id = 1;
+  string name = 2;
+  ThreatType type = 3;
+  float match_confidence = 4;
+  string description = 5;
+  repeated string iocs = 6; // Indicators of Compromise
+}
+
+enum ThreatType {
+  MALWARE = 0;
+  PHISHING = 1;
+  BRUTE_FORCE = 2;
+  SQL_INJECTION = 3;
+  XSS = 4;
+  DDoS = 5;
+  INSIDER_THREAT = 6;
+  APT = 7; // Advanced Persistent Threat
+  CREDENTIAL_STUFFING = 8;
+  ACCOUNT_TAKEOVER = 9;
+}
+
+message AnomalyIndicator {
+  string indicator_name = 1;
+  float anomaly_score = 2;
+  string description = 3;
+  AnomalyType type = 4;
+  map<string, double> baseline_values = 5;
+  map<string, double> observed_values = 6;
+}
+
+enum AnomalyType {
+  BEHAVIORAL = 0;
+  STATISTICAL = 1;
+  TEMPORAL = 2;
+  VOLUME = 3;
+  PATTERN = 4;
+}
+
+message RiskAssessmentResult {
+  float overall_risk_score = 1;
+  RiskLevel risk_level = 2;
+  repeated RiskFactor contributing_factors = 3;
+  repeated MitigationStrategy mitigation_strategies = 4;
+}
+
+message MitigationStrategy {
+  string strategy_id = 1;
+  string name = 2;
+  string description = 3;
+  StrategyPriority priority = 4;
+  google.protobuf.Duration estimated_time = 5;
+  repeated string required_actions = 6;
+}
+
+enum StrategyPriority {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  URGENT = 3;
+}
+
+message ThreatRecommendation {
+  string recommendation_id = 1;
+  RecommendationType type = 2;
+  string title = 3;
+  string description = 4;
+  ActionPriority priority = 5;
+  repeated string actions = 6;
+  map<string, string> parameters = 7;
+}
+
+enum RecommendationType {
+  IMMEDIATE_ACTION = 0;
+  POLICY_UPDATE = 1;
+  MONITORING_ENHANCEMENT = 2;
+  USER_TRAINING = 3;
+  SYSTEM_HARDENING = 4;
+}
+
+enum ActionPriority {
+  INFO = 0;
+  LOW = 1;
+  MEDIUM = 2;
+  HIGH = 3;
+  CRITICAL = 4;
+}
+
+message ThreatAlert {
+  string alert_id = 1;
+  ThreatType threat_type = 2;
+  ThreatLevel severity = 3;
+  string title = 4;
+  string description = 5;
+  AlertStatus status = 6;
+  google.protobuf.Timestamp detected_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  string affected_user_id = 9;
+  repeated string affected_resources = 10;
+  ThreatAnalysis analysis = 11;
+  repeated AlertAction actions_taken = 12;
+  string assigned_to = 13;
+}
+
+enum AlertStatus {
+  NEW = 0;
+  INVESTIGATING = 1;
+  CONFIRMED = 2;
+  FALSE_POSITIVE = 3;
+  RESOLVED = 4;
+  SUPPRESSED = 5;
+}
+
+message AlertAction {
+  string action_id = 1;
+  string action_type = 2;
+  string description = 3;
+  google.protobuf.Timestamp performed_at = 4;
+  string performed_by = 5;
+  ActionResult result = 6;
+}
+
+enum ActionResult {
+  SUCCESS = 0;
+  FAILED = 1;
+  PARTIAL = 2;
+  PENDING = 3;
+}
+
+message ThreatAlertFilter {
+  repeated ThreatType threat_types = 1;
+  repeated ThreatLevel severities = 2;
+  repeated AlertStatus statuses = 3;
+  repeated string affected_users = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+  string assigned_to = 7;
+}
+
+message ThreatRule {
+  string rule_id = 1;
+  string name = 2;
+  string description = 3;
+  bool enabled = 4;
+  RuleCondition condition = 5;
+  repeated RuleAction actions = 6;
+  RulePriority priority = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message RuleCondition {
+  string expression = 1;
+  repeated RuleParameter parameters = 2;
+  ConditionLogic logic = 3;
+}
+
+enum ConditionLogic {
+  AND = 0;
+  OR = 1;
+  NOT = 2;
+}
+
+message RuleParameter {
+  string name = 1;
+  ParameterType type = 2;
+  google.protobuf.Any value = 3;
+  string operator = 4;
+}
+
+enum ParameterType {
+  STRING = 0;
+  NUMBER = 1;
+  BOOLEAN = 2;
+  REGEX = 3;
+  IP_RANGE = 4;
+  TIME_RANGE = 5;
+}
+
+message RuleAction {
+  string action_type = 1;
+  map<string, google.protobuf.Any> parameters = 2;
+  bool async_execution = 3;
+}
+
+enum RulePriority {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  CRITICAL = 3;
+}
+
+message RuleValidationError {
+  string rule_id = 1;
+  string field = 2;
+  string error_message = 3;
+  ErrorSeverity severity = 4;
+}
+
+enum ErrorSeverity {
+  WARNING = 0;
+  ERROR = 1;
+  CRITICAL = 2;
+}
+
+// Encryption and key management
+message GenerateKeyRequest {
+  KeyType key_type = 1;
+  int32 key_size = 2;
+  string key_usage = 3;
+  google.protobuf.Duration expiry = 4;
+  map<string, string> metadata = 5;
+}
+
+message GenerateKeyResponse {
+  bool success = 1;
+  string error_message = 2;
+  string key_id = 3;
+  bytes public_key = 4;
+  KeyInfo key_info = 5;
+}
+
+message EncryptDataRequest {
+  string key_id = 1;
+  bytes data = 2;
+  EncryptionAlgorithm algorithm = 3;
+  map<string, string> context = 4;
+}
+
+message EncryptDataResponse {
+  bool success = 1;
+  string error_message = 2;
+  bytes encrypted_data = 3;
+  bytes initialization_vector = 4;
+  string encryption_context = 5;
+}
+
+message DecryptDataRequest {
+  string key_id = 1;
+  bytes encrypted_data = 2;
+  bytes initialization_vector = 3;
+  string encryption_context = 4;
+}
+
+message DecryptDataResponse {
+  bool success = 1;
+  string error_message = 2;
+  bytes decrypted_data = 3;
+}
+
+message RotateKeysRequest {
+  repeated string key_ids = 1;
+  bool force_rotation = 2;
+  string requester_id = 3;
+}
+
+message RotateKeysResponse {
+  bool success = 1;
+  string error_message = 2;
+  repeated KeyRotationResult results = 3;
+  google.protobuf.Timestamp rotated_at = 4;
+}
+
+enum KeyType {
+  RSA = 0;
+  EC = 1;
+  AES = 2;
+  HMAC = 3;
+  ED25519 = 4;
+}
+
+enum EncryptionAlgorithm {
+  AES_256_GCM = 0;
+  AES_256_CBC = 1;
+  RSA_OAEP = 2;
+  CHACHA20_POLY1305 = 3;
+}
+
+message KeyInfo {
+  string key_id = 1;
+  KeyType type = 2;
+  int32 size = 3;
+  string usage = 4;
+  KeyStatus status = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp expires_at = 7;
+  int32 version = 8;
+  map<string, string> metadata = 9;
+}
+
+enum KeyStatus {
+  ACTIVE = 0;
+  INACTIVE = 1;
+  EXPIRED = 2;
+  REVOKED = 3;
+  PENDING_DELETION = 4;
+}
+
+message KeyRotationResult {
+  string old_key_id = 1;
+  string new_key_id = 2;
+  bool success = 3;
+  string error_message = 4;
+  google.protobuf.Timestamp rotated_at = 5;
+}
+
+// Compliance and reporting
+message GenerateComplianceReportRequest {
+  ComplianceFramework framework = 1;
+  google.protobuf.Timestamp start_date = 2;
+  google.protobuf.Timestamp end_date = 3;
+  ReportFormat format = 4;
+  repeated string scopes = 5;
+}
+
+message GenerateComplianceReportResponse {
+  bool success = 1;
+  string error_message = 2;
+  string report_id = 3;
+  bytes report_data = 4;
+  ReportMetadata metadata = 5;
+}
+
+message GetComplianceStatusRequest {
+  ComplianceFramework framework = 1;
+  repeated string control_ids = 2;
+  bool include_evidence = 3;
+}
+
+message GetComplianceStatusResponse {
+  ComplianceStatus overall_status = 1;
+  repeated ControlAssessment control_assessments = 2;
+  ComplianceScore score = 3;
+  google.protobuf.Timestamp assessed_at = 4;
+}
+
+enum ComplianceFramework {
+  SOC2 = 0;
+  ISO27001 = 1;
+  GDPR = 2;
+  HIPAA = 3;
+  PCI_DSS = 4;
+  NIST = 5;
+  CIS = 6;
+}
+
+enum ReportFormat {
+  PDF = 0;
+  HTML = 1;
+  JSON = 2;
+  CSV = 3;
+  XML = 4;
+}
+
+message ReportMetadata {
+  string report_id = 1;
+  ComplianceFramework framework = 2;
+  google.protobuf.Timestamp generated_at = 3;
+  string generated_by = 4;
+  google.protobuf.Timestamp period_start = 5;
+  google.protobuf.Timestamp period_end = 6;
+  int32 total_controls = 7;
+  int32 assessed_controls = 8;
+}
+
+enum ComplianceStatus {
+  COMPLIANT = 0;
+  NON_COMPLIANT = 1;
+  PARTIALLY_COMPLIANT = 2;
+  NOT_ASSESSED = 3;
+}
+
+message ControlAssessment {
+  string control_id = 1;
+  string control_name = 2;
+  ComplianceStatus status = 3;
+  float compliance_score = 4;
+  string assessment_notes = 5;
+  repeated Evidence evidence = 6;
+  repeated Recommendation recommendations = 7;
+  google.protobuf.Timestamp last_assessed = 8;
+}
+
+message Evidence {
+  string evidence_id = 1;
+  string type = 2;
+  string description = 3;
+  string source = 4;
+  google.protobuf.Timestamp collected_at = 5;
+  bytes data = 6;
+}
+
+message Recommendation {
+  string recommendation_id = 1;
+  string description = 2;
+  RecommendationPriority priority = 3;
+  google.protobuf.Duration estimated_effort = 4;
+  repeated string remediation_steps = 5;
+}
+
+enum RecommendationPriority {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  CRITICAL = 3;
+}
+
+message ComplianceScore {
+  float overall_score = 1;
+  float max_score = 2;
+  float percentage = 3;
+  map<string, float> category_scores = 4;
+  ScoreTrend trend = 5;
+}
+
+message ScoreTrend {
+  TrendDirection direction = 1;
+  float change = 2;
+  google.protobuf.Duration period = 3;
+}
+
+// Certificate management
+message IssueCertificateRequest {
+  CertificateRequest cert_request = 1;
+  string issuer_id = 2;
+  CertificateType type = 3;
+  google.protobuf.Duration validity_period = 4;
+}
+
+message IssueCertificateResponse {
+  bool success = 1;
+  string error_message = 2;
+  string certificate_id = 3;
+  bytes certificate = 4;
+  bytes private_key = 5;
+  CertificateInfo info = 6;
+}
+
+message RevokeCertificateRequest {
+  string certificate_id = 1;
+  RevocationReason reason = 2;
+  string requester_id = 3;
+}
+
+message RevokeCertificateResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp revoked_at = 3;
+}
+
+message ValidateCertificateRequest {
+  bytes certificate = 1;
+  bool check_revocation = 2;
+  bool check_expiry = 3;
+  string intended_usage = 4;
+}
+
+message ValidateCertificateResponse {
+  bool valid = 1;
+  string error_message = 2;
+  CertificateValidation validation = 3;
+  CertificateInfo info = 4;
+}
+
+message CertificateRequest {
+  string common_name = 1;
+  repeated string san_dns_names = 2;
+  repeated string san_ip_addresses = 3;
+  string organization = 4;
+  string organizational_unit = 5;
+  string country = 6;
+  string state = 7;
+  string locality = 8;
+  bytes csr = 9; // Certificate Signing Request
+}
+
+enum CertificateType {
+  SERVER = 0;
+  CLIENT = 1;
+  CODE_SIGNING = 2;
+  EMAIL = 3;
+  CA = 4; // Certificate Authority
+}
+
+enum RevocationReason {
+  UNSPECIFIED = 0;
+  KEY_COMPROMISE = 1;
+  CA_COMPROMISE = 2;
+  AFFILIATION_CHANGED = 3;
+  SUPERSEDED = 4;
+  CESSATION_OF_OPERATION = 5;
+  CERTIFICATE_HOLD = 6;
+}
+
+message CertificateInfo {
+  string certificate_id = 1;
+  string subject = 2;
+  string issuer = 3;
+  string serial_number = 4;
+  google.protobuf.Timestamp not_before = 5;
+  google.protobuf.Timestamp not_after = 6;
+  string signature_algorithm = 7;
+  string public_key_algorithm = 8;
+  int32 key_size = 9;
+  repeated string key_usage = 10;
+  repeated string extended_key_usage = 11;
+  CertificateStatus status = 12;
+}
+
+enum CertificateStatus {
+  VALID = 0;
+  EXPIRED = 1;
+  REVOKED = 2;
+  SUSPENDED = 3;
+}
+
+message CertificateValidation {
+  bool signature_valid = 1;
+  bool not_expired = 2;
+  bool not_revoked = 3;
+  bool chain_valid = 4;
+  repeated string validation_errors = 5;
+  google.protobuf.Timestamp validated_at = 6;
+}
