@@ -1,0 +1,600 @@
+syntax = "proto3";
+
+package analytics;
+
+option go_package = "github.com/example/notebook/proto/analytics";
+option java_package = "com.example.notebook.proto.analytics";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+// Analytics service for tracking user interactions and system metrics
+service AnalyticsService {
+  // Track a single event
+  rpc TrackEvent(TrackEventRequest) returns (TrackEventResponse);
+  
+  // Track multiple events in batch
+  rpc TrackEventBatch(TrackEventBatchRequest) returns (TrackEventBatchResponse);
+  
+  // Get analytics data for a specific time range
+  rpc GetAnalytics(GetAnalyticsRequest) returns (GetAnalyticsResponse);
+  
+  // Get real-time metrics
+  rpc GetRealtimeMetrics(GetRealtimeMetricsRequest) returns (stream RealtimeMetric);
+  
+  // Create custom dashboard
+  rpc CreateDashboard(CreateDashboardRequest) returns (CreateDashboardResponse);
+  
+  // Get dashboard data
+  rpc GetDashboard(GetDashboardRequest) returns (GetDashboardResponse);
+  
+  // Export analytics data
+  rpc ExportData(ExportDataRequest) returns (stream ExportDataChunk);
+  
+  // Create funnel analysis
+  rpc CreateFunnel(CreateFunnelRequest) returns (CreateFunnelResponse);
+  
+  // Get cohort analysis
+  rpc GetCohortAnalysis(GetCohortAnalysisRequest) returns (GetCohortAnalysisResponse);
+  
+  // A/B test management
+  rpc CreateABTest(CreateABTestRequest) returns (CreateABTestResponse);
+  rpc GetABTestResults(GetABTestResultsRequest) returns (GetABTestResultsResponse);
+}
+
+// Event tracking messages
+message TrackEventRequest {
+  string session_id = 1;
+  string user_id = 2;
+  Event event = 3;
+  map<string, string> context = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  string device_id = 6;
+  string app_version = 7;
+  string platform = 8;
+  GeoLocation location = 9;
+}
+
+message TrackEventResponse {
+  bool success = 1;
+  string event_id = 2;
+  string error_message = 3;
+  ProcessingInfo processing_info = 4;
+}
+
+message TrackEventBatchRequest {
+  repeated TrackEventRequest events = 1;
+  string batch_id = 2;
+  BatchConfig config = 3;
+}
+
+message TrackEventBatchResponse {
+  int32 successful_events = 1;
+  int32 failed_events = 2;
+  repeated string event_ids = 3;
+  repeated BatchError errors = 4;
+  string batch_id = 5;
+}
+
+message Event {
+  string name = 1;
+  EventCategory category = 2;
+  map<string, google.protobuf.Any> properties = 3;
+  EventPriority priority = 4;
+  repeated string tags = 5;
+  EventMetadata metadata = 6;
+  google.protobuf.Duration duration = 7;
+  int64 value = 8;
+  string source_component = 9;
+  EventType type = 10;
+}
+
+enum EventCategory {
+  USER_INTERACTION = 0;
+  SYSTEM_PERFORMANCE = 1;
+  BUSINESS_METRIC = 2;
+  ERROR_TRACKING = 3;
+  SECURITY_EVENT = 4;
+  CUSTOM = 5;
+}
+
+enum EventPriority {
+  LOW = 0;
+  NORMAL = 1;
+  HIGH = 2;
+  CRITICAL = 3;
+}
+
+enum EventType {
+  PAGE_VIEW = 0;
+  CLICK = 1;
+  FORM_SUBMIT = 2;
+  API_CALL = 3;
+  ERROR = 4;
+  CONVERSION = 5;
+  CUSTOM_EVENT = 6;
+}
+
+message EventMetadata {
+  string experiment_id = 1;
+  string variant_id = 2;
+  string campaign_id = 3;
+  string referrer = 4;
+  map<string, string> custom_fields = 5;
+}
+
+message GeoLocation {
+  double latitude = 1;
+  double longitude = 2;
+  string country = 3;
+  string city = 4;
+  string region = 5;
+  string timezone = 6;
+}
+
+message ProcessingInfo {
+  google.protobuf.Timestamp processed_at = 1;
+  string processor_id = 2;
+  google.protobuf.Duration processing_time = 3;
+  int32 queue_size = 4;
+}
+
+message BatchConfig {
+  int32 max_retries = 1;
+  bool fail_fast = 2;
+  google.protobuf.Duration timeout = 3;
+  bool parallel_processing = 4;
+}
+
+message BatchError {
+  int32 event_index = 1;
+  string error_code = 2;
+  string error_message = 3;
+  bool retryable = 4;
+}
+
+// Analytics query messages
+message GetAnalyticsRequest {
+  TimeRange time_range = 1;
+  repeated string metrics = 2;
+  repeated Dimension dimensions = 3;
+  repeated Filter filters = 4;
+  string segment_id = 5;
+  Aggregation aggregation = 6;
+  int32 limit = 7;
+  string cursor = 8;
+  SortOrder sort_order = 9;
+}
+
+message GetAnalyticsResponse {
+  repeated AnalyticsDataPoint data_points = 1;
+  AnalyticsSummary summary = 2;
+  string next_cursor = 3;
+  bool has_more = 4;
+  QueryMetadata query_metadata = 5;
+}
+
+message TimeRange {
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+  TimeGranularity granularity = 3;
+  string timezone = 4;
+}
+
+enum TimeGranularity {
+  MINUTE = 0;
+  HOUR = 1;
+  DAY = 2;
+  WEEK = 3;
+  MONTH = 4;
+  QUARTER = 5;
+  YEAR = 6;
+}
+
+message Dimension {
+  string name = 1;
+  DimensionType type = 2;
+  repeated string values = 3;
+  bool include_null = 4;
+}
+
+enum DimensionType {
+  STRING = 0;
+  NUMBER = 1;
+  BOOLEAN = 2;
+  DATE = 3;
+  CATEGORICAL = 4;
+}
+
+message Filter {
+  string field = 1;
+  FilterOperator operator = 2;
+  repeated string values = 3;
+  bool case_sensitive = 4;
+}
+
+enum FilterOperator {
+  EQUALS = 0;
+  NOT_EQUALS = 1;
+  GREATER_THAN = 2;
+  LESS_THAN = 3;
+  GREATER_THAN_OR_EQUAL = 4;
+  LESS_THAN_OR_EQUAL = 5;
+  IN = 6;
+  NOT_IN = 7;
+  CONTAINS = 8;
+  NOT_CONTAINS = 9;
+  STARTS_WITH = 10;
+  ENDS_WITH = 11;
+  REGEX = 12;
+}
+
+message Aggregation {
+  AggregationType type = 1;
+  string field = 2;
+  repeated Percentile percentiles = 3;
+}
+
+enum AggregationType {
+  COUNT = 0;
+  SUM = 1;
+  AVERAGE = 2;
+  MIN = 3;
+  MAX = 4;
+  MEDIAN = 5;
+  PERCENTILE = 6;
+  DISTINCT_COUNT = 7;
+  STANDARD_DEVIATION = 8;
+}
+
+message Percentile {
+  double value = 1; // 0.0 to 1.0
+  string label = 2;
+}
+
+message SortOrder {
+  string field = 1;
+  SortDirection direction = 2;
+}
+
+enum SortDirection {
+  ASC = 0;
+  DESC = 1;
+}
+
+message AnalyticsDataPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  map<string, google.protobuf.Any> dimensions = 2;
+  map<string, double> metrics = 3;
+  int64 sample_count = 4;
+}
+
+message AnalyticsSummary {
+  int64 total_events = 1;
+  int64 unique_users = 2;
+  int64 unique_sessions = 3;
+  map<string, double> metric_totals = 4;
+  google.protobuf.Duration time_span = 5;
+}
+
+message QueryMetadata {
+  google.protobuf.Duration execution_time = 1;
+  int64 scanned_events = 2;
+  bool is_estimated = 3;
+  double confidence_level = 4;
+}
+
+// Real-time metrics
+message GetRealtimeMetricsRequest {
+  repeated string metric_names = 1;
+  google.protobuf.Duration update_interval = 2;
+  repeated Filter filters = 3;
+}
+
+message RealtimeMetric {
+  string name = 1;
+  double value = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  map<string, string> labels = 4;
+  MetricTrend trend = 5;
+}
+
+message MetricTrend {
+  TrendDirection direction = 1;
+  double change_percentage = 2;
+  google.protobuf.Duration comparison_period = 3;
+}
+
+enum TrendDirection {
+  STABLE = 0;
+  INCREASING = 1;
+  DECREASING = 2;
+  VOLATILE = 3;
+}
+
+// Dashboard messages
+message CreateDashboardRequest {
+  string name = 1;
+  string description = 2;
+  repeated Widget widgets = 3;
+  DashboardConfig config = 4;
+  repeated string tags = 5;
+  string folder_id = 6;
+}
+
+message CreateDashboardResponse {
+  string dashboard_id = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message GetDashboardRequest {
+  string dashboard_id = 1;
+  TimeRange time_range = 2;
+  map<string, string> parameters = 3;
+}
+
+message GetDashboardResponse {
+  Dashboard dashboard = 1;
+  repeated WidgetData widget_data = 2;
+  google.protobuf.Timestamp last_updated = 3;
+}
+
+message Dashboard {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated Widget widgets = 4;
+  DashboardConfig config = 5;
+  repeated string tags = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message Widget {
+  string id = 1;
+  string title = 2;
+  WidgetType type = 3;
+  WidgetQuery query = 4;
+  WidgetLayout layout = 5;
+  WidgetConfig config = 6;
+}
+
+enum WidgetType {
+  LINE_CHART = 0;
+  BAR_CHART = 1;
+  PIE_CHART = 2;
+  TABLE = 3;
+  METRIC_CARD = 4;
+  HEATMAP = 5;
+  FUNNEL = 6;
+  COHORT = 7;
+}
+
+message WidgetQuery {
+  repeated string metrics = 1;
+  repeated Dimension dimensions = 2;
+  repeated Filter filters = 3;
+  TimeRange time_range = 4;
+  Aggregation aggregation = 5;
+}
+
+message WidgetLayout {
+  int32 x = 1;
+  int32 y = 2;
+  int32 width = 3;
+  int32 height = 4;
+}
+
+message WidgetConfig {
+  map<string, google.protobuf.Any> display_options = 1;
+  bool auto_refresh = 2;
+  google.protobuf.Duration refresh_interval = 3;
+}
+
+message WidgetData {
+  string widget_id = 1;
+  repeated AnalyticsDataPoint data = 2;
+  AnalyticsSummary summary = 3;
+  google.protobuf.Timestamp generated_at = 4;
+}
+
+message DashboardConfig {
+  bool auto_refresh = 1;
+  google.protobuf.Duration refresh_interval = 2;
+  string theme = 3;
+  bool is_public = 4;
+  repeated string allowed_users = 5;
+}
+
+// Export messages
+message ExportDataRequest {
+  GetAnalyticsRequest query = 1;
+  ExportFormat format = 2;
+  ExportOptions options = 3;
+}
+
+enum ExportFormat {
+  CSV = 0;
+  JSON = 1;
+  PARQUET = 2;
+  EXCEL = 3;
+}
+
+message ExportOptions {
+  bool include_headers = 1;
+  string delimiter = 2;
+  bool compress = 3;
+  int32 chunk_size = 4;
+}
+
+message ExportDataChunk {
+  bytes data = 1;
+  int32 chunk_index = 2;
+  bool is_last_chunk = 3;
+  int64 total_rows = 4;
+}
+
+// Funnel analysis
+message CreateFunnelRequest {
+  string name = 1;
+  repeated FunnelStep steps = 2;
+  TimeRange time_range = 3;
+  repeated Filter filters = 4;
+  FunnelConfig config = 5;
+}
+
+message CreateFunnelResponse {
+  string funnel_id = 1;
+  FunnelResults results = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+message FunnelStep {
+  string name = 1;
+  Event event_criteria = 2;
+  google.protobuf.Duration max_time_to_next = 3;
+  int32 order = 4;
+}
+
+message FunnelConfig {
+  bool strict_order = 1;
+  google.protobuf.Duration conversion_window = 2;
+  string user_id_field = 3;
+}
+
+message FunnelResults {
+  repeated FunnelStepResult steps = 1;
+  double overall_conversion_rate = 2;
+  int64 total_users = 3;
+  google.protobuf.Duration avg_completion_time = 4;
+}
+
+message FunnelStepResult {
+  string step_name = 1;
+  int64 users_entered = 2;
+  int64 users_completed = 3;
+  double conversion_rate = 4;
+  double drop_off_rate = 5;
+  google.protobuf.Duration avg_time_to_complete = 6;
+}
+
+// Cohort analysis
+message GetCohortAnalysisRequest {
+  string cohort_field = 1;
+  string value_field = 2;
+  TimeRange time_range = 3;
+  CohortPeriod period = 4;
+  repeated Filter filters = 5;
+  int32 periods_count = 6;
+}
+
+enum CohortPeriod {
+  DAILY = 0;
+  WEEKLY = 1;
+  MONTHLY = 2;
+}
+
+message GetCohortAnalysisResponse {
+  repeated CohortData cohorts = 1;
+  CohortSummary summary = 2;
+  google.protobuf.Timestamp generated_at = 3;
+}
+
+message CohortData {
+  string cohort_id = 1;
+  google.protobuf.Timestamp cohort_date = 2;
+  int64 initial_size = 3;
+  repeated CohortPeriodData periods = 4;
+}
+
+message CohortPeriodData {
+  int32 period_number = 1;
+  int64 active_users = 2;
+  double retention_rate = 3;
+  double cumulative_value = 4;
+}
+
+message CohortSummary {
+  double avg_retention_rate = 1;
+  int64 total_cohorts = 2;
+  double best_performing_cohort_rate = 3;
+  double worst_performing_cohort_rate = 4;
+}
+
+// A/B Testing
+message CreateABTestRequest {
+  string name = 1;
+  string description = 2;
+  repeated ABTestVariant variants = 3;
+  ABTestConfig config = 4;
+  repeated string target_metrics = 5;
+}
+
+message CreateABTestResponse {
+  string test_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  google.protobuf.Timestamp start_time = 4;
+}
+
+message ABTestVariant {
+  string id = 1;
+  string name = 2;
+  double traffic_percentage = 3;
+  map<string, google.protobuf.Any> configuration = 4;
+}
+
+message ABTestConfig {
+  double confidence_level = 1;
+  double minimum_detectable_effect = 2;
+  int64 minimum_sample_size = 3;
+  google.protobuf.Duration max_duration = 4;
+  bool auto_stop_on_significance = 5;
+}
+
+message GetABTestResultsRequest {
+  string test_id = 1;
+  TimeRange time_range = 2;
+  bool include_segments = 3;
+}
+
+message GetABTestResultsResponse {
+  ABTestResults results = 1;
+  ABTestStatus status = 2;
+  google.protobuf.Timestamp last_updated = 3;
+}
+
+message ABTestResults {
+  repeated ABTestVariantResult variant_results = 1;
+  ABTestSignificance significance = 2;
+  string winning_variant = 3;
+  double confidence_level = 4;
+}
+
+message ABTestVariantResult {
+  string variant_id = 1;
+  int64 sample_size = 2;
+  double conversion_rate = 3;
+  double confidence_interval_lower = 4;
+  double confidence_interval_upper = 5;
+  map<string, double> metric_values = 6;
+}
+
+message ABTestSignificance {
+  bool is_significant = 1;
+  double p_value = 2;
+  double effect_size = 3;
+  double statistical_power = 4;
+}
+
+enum ABTestStatus {
+  DRAFT = 0;
+  RUNNING = 1;
+  PAUSED = 2;
+  COMPLETED = 3;
+  CANCELLED = 4;
+}

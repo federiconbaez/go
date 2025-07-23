@@ -1,0 +1,758 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "github.com/example/notebook/proto/notification";
+option java_package = "com.example.notebook.proto.notification";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+// Notification service for real-time and scheduled notifications
+service NotificationService {
+  // Send immediate notification
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+  
+  // Send notification batch
+  rpc SendNotificationBatch(SendNotificationBatchRequest) returns (SendNotificationBatchResponse);
+  
+  // Schedule notification for later delivery
+  rpc ScheduleNotification(ScheduleNotificationRequest) returns (ScheduleNotificationResponse);
+  
+  // Subscribe to real-time notifications
+  rpc SubscribeToNotifications(SubscribeRequest) returns (stream NotificationMessage);
+  
+  // Create notification template
+  rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
+  
+  // Get user notification preferences
+  rpc GetUserPreferences(GetUserPreferencesRequest) returns (GetUserPreferencesResponse);
+  
+  // Update user notification preferences  
+  rpc UpdateUserPreferences(UpdateUserPreferencesRequest) returns (UpdateUserPreferencesResponse);
+  
+  // Get notification history
+  rpc GetNotificationHistory(GetNotificationHistoryRequest) returns (GetNotificationHistoryResponse);
+  
+  // Mark notification as read
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse);
+  
+  // Create notification campaign
+  rpc CreateCampaign(CreateCampaignRequest) returns (CreateCampaignResponse);
+  
+  // Get delivery analytics
+  rpc GetDeliveryAnalytics(GetDeliveryAnalyticsRequest) returns (GetDeliveryAnalyticsResponse);
+  
+  // Manage push subscriptions
+  rpc ManagePushSubscription(ManagePushSubscriptionRequest) returns (ManagePushSubscriptionResponse);
+}
+
+// Core notification messages
+message SendNotificationRequest {
+  string recipient_id = 1;
+  NotificationMessage message = 2;
+  DeliveryOptions delivery_options = 3;
+  string idempotency_key = 4;
+  map<string, string> metadata = 5;
+  Priority priority = 6;
+  google.protobuf.Timestamp scheduled_at = 7;
+  repeated DeliveryChannel channels = 8;
+}
+
+message SendNotificationResponse {
+  string notification_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  DeliveryStatus status = 4;
+  google.protobuf.Timestamp sent_at = 5;
+  map<DeliveryChannel, ChannelResult> channel_results = 6;
+}
+
+message SendNotificationBatchRequest {
+  repeated SendNotificationRequest notifications = 1;
+  string batch_id = 2;
+  BatchConfig batch_config = 3;
+}
+
+message SendNotificationBatchResponse {
+  string batch_id = 1;
+  int32 successful_count = 2;
+  int32 failed_count = 3;
+  repeated BatchResult results = 4;
+  BatchStatus status = 5;
+}
+
+message NotificationMessage {
+  string id = 1;
+  string title = 2;
+  string body = 3;
+  string image_url = 4;
+  string icon_url = 5;
+  string click_action = 6;
+  map<string, string> data = 7;
+  NotificationType type = 8;
+  string category = 9;
+  repeated ActionButton action_buttons = 10;
+  RichContent rich_content = 11;
+  LocalizationInfo localization = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Duration ttl = 14;
+  string sound = 15;
+  bool badge = 16;
+  string tag = 17;
+  string thread_id = 18;
+  string group_key = 19;
+}
+
+enum NotificationType {
+  SYSTEM = 0;
+  USER_ACTION = 1;
+  REMINDER = 2;
+  PROMOTIONAL = 3;
+  TRANSACTIONAL = 4;
+  ALERT = 5;
+  SOCIAL = 6;
+  NEWS = 7;
+  EMERGENCY = 8;
+}
+
+enum Priority {
+  LOW = 0;
+  NORMAL = 1;
+  HIGH = 2;
+  URGENT = 3;
+}
+
+enum DeliveryChannel {
+  PUSH = 0;
+  EMAIL = 1;
+  SMS = 2;
+  IN_APP = 3;
+  WEBHOOK = 4;
+  SLACK = 5;
+  DESKTOP = 6;
+  BROWSER = 7;
+}
+
+enum DeliveryStatus {
+  PENDING = 0;
+  SENT = 1;
+  DELIVERED = 2;
+  READ = 3;
+  FAILED = 4;
+  EXPIRED = 5;
+  CANCELLED = 6;
+}
+
+message ActionButton {
+  string id = 1;
+  string title = 2;
+  string icon = 3;
+  string action = 4;
+  map<string, string> parameters = 5;
+  ButtonStyle style = 6;
+}
+
+enum ButtonStyle {
+  DEFAULT = 0;
+  DESTRUCTIVE = 1;
+  ACCENT = 2;
+  OUTLINE = 3;
+}
+
+message RichContent {
+  string html_body = 1;
+  repeated MediaAttachment attachments = 2;
+  InlineData inline_data = 3;
+  ProgressIndicator progress = 4;
+}
+
+message MediaAttachment {
+  string url = 1;
+  MediaType type = 2;
+  string thumbnail_url = 3;
+  string caption = 4;
+  int64 size_bytes = 5;
+  string mime_type = 6;
+}
+
+enum MediaType {
+  IMAGE = 0;
+  VIDEO = 1;
+  AUDIO = 2;
+  DOCUMENT = 3;
+  GIF = 4;
+}
+
+message InlineData {
+  bytes data = 1;
+  string content_type = 2;
+  string filename = 3;
+}
+
+message ProgressIndicator {
+  int32 current = 1;
+  int32 total = 2;
+  string label = 3;
+  bool indeterminate = 4;
+}
+
+message LocalizationInfo {
+  string default_language = 1;
+  map<string, LocalizedContent> translations = 2;
+  string user_language = 3;
+}
+
+message LocalizedContent {
+  string title = 1;
+  string body = 2;
+  repeated LocalizedActionButton action_buttons = 3;
+}
+
+message LocalizedActionButton {
+  string id = 1;
+  string title = 2;
+}
+
+message DeliveryOptions {
+  repeated DeliveryChannel preferred_channels = 1;
+  DeliveryStrategy strategy = 2;
+  google.protobuf.Duration retry_interval = 3;
+  int32 max_retries = 4;
+  bool require_confirmation = 5;
+  google.protobuf.Duration expiry_time = 6;
+  QuietHours quiet_hours = 7;
+  RateLimiting rate_limiting = 8;
+}
+
+enum DeliveryStrategy {
+  FIRST_SUCCESS = 0;
+  ALL_CHANNELS = 1;
+  FALLBACK_CHAIN = 2;
+  PARALLEL = 3;
+}
+
+message QuietHours {
+  string start_time = 1; // HH:MM format
+  string end_time = 2;   // HH:MM format
+  string timezone = 3;
+  repeated DayOfWeek active_days = 4;
+  bool respect_quiet_hours = 5;
+}
+
+enum DayOfWeek {
+  SUNDAY = 0;
+  MONDAY = 1;
+  TUESDAY = 2;
+  WEDNESDAY = 3;
+  THURSDAY = 4;
+  FRIDAY = 5;
+  SATURDAY = 6;
+}
+
+message RateLimiting {
+  int32 max_per_minute = 1;
+  int32 max_per_hour = 2;
+  int32 max_per_day = 3;
+  bool adaptive = 4;
+}
+
+message ChannelResult {
+  DeliveryChannel channel = 1;
+  DeliveryStatus status = 2;
+  string message = 3;
+  google.protobuf.Timestamp attempted_at = 4;
+  google.protobuf.Timestamp delivered_at = 5;
+  map<string, string> metadata = 6;
+}
+
+// Scheduling messages
+message ScheduleNotificationRequest {
+  SendNotificationRequest notification = 1;
+  google.protobuf.Timestamp scheduled_time = 2;
+  ScheduleConfig schedule_config = 3;
+  string schedule_id = 4;
+}
+
+message ScheduleNotificationResponse {
+  string schedule_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  google.protobuf.Timestamp next_execution = 4;
+}
+
+message ScheduleConfig {
+  RecurrencePattern recurrence = 1;
+  google.protobuf.Timestamp end_date = 2;
+  int32 max_occurrences = 3;
+  string timezone = 4;
+  bool skip_holidays = 5;
+  repeated google.protobuf.Timestamp exceptions = 6;
+}
+
+message RecurrencePattern {
+  RecurrenceType type = 1;
+  int32 interval = 2;
+  repeated DayOfWeek days_of_week = 3;
+  int32 day_of_month = 4;
+  int32 week_of_month = 5;
+  int32 month_of_year = 6;
+}
+
+enum RecurrenceType {
+  ONCE = 0;
+  DAILY = 1;
+  WEEKLY = 2;
+  MONTHLY = 3;
+  YEARLY = 4;
+  CUSTOM = 5;
+}
+
+// Subscription messages
+message SubscribeRequest {
+  string user_id = 1;
+  repeated NotificationFilter filters = 2;
+  SubscriptionConfig config = 3;
+  string client_id = 4;
+}
+
+message NotificationFilter {
+  FilterType type = 1;
+  repeated string values = 2;
+  bool include = 3; // true for include, false for exclude
+}
+
+enum FilterType {
+  NOTIFICATION_TYPE = 0;
+  CATEGORY = 1;
+  PRIORITY = 2;
+  SENDER = 3;
+  TAG = 4;
+  KEYWORD = 5;
+}
+
+message SubscriptionConfig {
+  bool include_historical = 1;
+  google.protobuf.Duration history_duration = 2;
+  int32 buffer_size = 3;
+  bool real_time_only = 4;
+}
+
+// Template messages
+message CreateTemplateRequest {
+  string name = 1;
+  NotificationTemplate template = 2;
+  string category = 3;
+  repeated string tags = 4;
+}
+
+message CreateTemplateResponse {
+  string template_id = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message NotificationTemplate {
+  string id = 1;
+  string name = 2;
+  string title_template = 3;
+  string body_template = 4;
+  map<string, google.protobuf.Any> default_data = 5;
+  repeated TemplateVariable variables = 6;
+  TemplateConfig config = 7;
+  map<string, LocalizedTemplate> localizations = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message TemplateVariable {
+  string name = 1;
+  VariableType type = 2;
+  google.protobuf.Any default_value = 3;
+  bool required = 4;
+  string description = 5;
+  VariableValidation validation = 6;
+}
+
+enum VariableType {
+  STRING = 0;
+  INTEGER = 1;
+  FLOAT = 2;
+  BOOLEAN = 3;
+  DATE = 4;
+  URL = 5;
+  EMAIL = 6;
+  PHONE = 7;
+}
+
+message VariableValidation {
+  string regex_pattern = 1;
+  int32 min_length = 2;
+  int32 max_length = 3;
+  double min_value = 4;
+  double max_value = 5;
+  repeated string enum_values = 6;
+}
+
+message LocalizedTemplate {
+  string language = 1;
+  string title_template = 2;
+  string body_template = 3;
+  map<string, string> variable_translations = 4;
+}
+
+message TemplateConfig {
+  DeliveryChannel default_channel = 1;
+  Priority default_priority = 2;
+  google.protobuf.Duration default_ttl = 3;
+  bool supports_rich_content = 4;
+  repeated DeliveryChannel supported_channels = 5;
+}
+
+// User preferences messages
+message GetUserPreferencesRequest {
+  string user_id = 1;
+}
+
+message GetUserPreferencesResponse {
+  UserNotificationPreferences preferences = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message UpdateUserPreferencesRequest {
+  string user_id = 1;
+  UserNotificationPreferences preferences = 2;
+}
+
+message UpdateUserPreferencesResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message UserNotificationPreferences {
+  string user_id = 1;
+  map<DeliveryChannel, ChannelPreference> channel_preferences = 2;
+  map<string, CategoryPreference> category_preferences = 3;
+  QuietHours quiet_hours = 4;
+  string timezone = 5;
+  string language = 6;
+  bool global_enabled = 7;
+  DoNotDisturb do_not_disturb = 8;
+  AdvancedPreferences advanced = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+message ChannelPreference {
+  bool enabled = 1;
+  string endpoint = 2; // email address, phone number, etc.
+  map<string, string> settings = 3;
+  bool verified = 4;
+  google.protobuf.Timestamp verified_at = 5;
+}
+
+message CategoryPreference {
+  bool enabled = 1;
+  repeated DeliveryChannel allowed_channels = 2;
+  Priority minimum_priority = 3;
+  FrequencyLimit frequency_limit = 4;
+}
+
+message FrequencyLimit {
+  int32 max_per_hour = 1;
+  int32 max_per_day = 2;
+  int32 max_per_week = 3;
+  bool adaptive = 4;
+}
+
+message DoNotDisturb {
+  bool enabled = 1;
+  string start_time = 2;
+  string end_time = 3;
+  repeated DayOfWeek active_days = 4;
+  repeated Priority allowed_priorities = 5;
+  repeated string allowed_categories = 6;
+}
+
+message AdvancedPreferences {
+  bool consolidate_similar = 1;
+  google.protobuf.Duration consolidation_window = 2;
+  bool smart_delivery_time = 3;
+  bool predictive_batching = 4;
+  map<string, string> custom_settings = 5;
+}
+
+// History messages
+message GetNotificationHistoryRequest {
+  string user_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+  repeated NotificationFilter filters = 4;
+  int32 limit = 5;
+  string cursor = 6;
+  bool include_read = 7;
+  SortOptions sort_options = 8;
+}
+
+message GetNotificationHistoryResponse {
+  repeated NotificationHistoryItem items = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  HistorySummary summary = 4;
+}
+
+message NotificationHistoryItem {
+  string notification_id = 1;
+  NotificationMessage message = 2;
+  DeliveryStatus status = 3;
+  google.protobuf.Timestamp sent_at = 4;
+  google.protobuf.Timestamp delivered_at = 5;
+  google.protobuf.Timestamp read_at = 6;
+  repeated ChannelResult delivery_results = 7;
+  map<string, string> metadata = 8;
+  InteractionHistory interactions = 9;
+}
+
+message InteractionHistory {
+  bool clicked = 1;
+  google.protobuf.Timestamp clicked_at = 2;
+  string clicked_action = 3;
+  bool dismissed = 4;
+  google.protobuf.Timestamp dismissed_at = 5;
+  repeated ActionInteraction action_interactions = 6;
+}
+
+message ActionInteraction {
+  string action_id = 1;
+  google.protobuf.Timestamp interacted_at = 2;
+  map<string, string> parameters = 3;
+}
+
+message HistorySummary {
+  int64 total_notifications = 1;
+  int64 read_notifications = 2;
+  int64 unread_notifications = 3;
+  double read_rate = 4;
+  map<DeliveryChannel, int64> channel_counts = 5;
+  map<string, int64> category_counts = 6;
+}
+
+message SortOptions {
+  SortField field = 1;
+  SortDirection direction = 2;
+}
+
+enum SortField {
+  SENT_TIME = 0;
+  READ_TIME = 1;
+  PRIORITY = 2;
+  CATEGORY = 3;
+}
+
+enum SortDirection {
+  ASC = 0;
+  DESC = 1;
+}
+
+// Mark as read messages
+message MarkAsReadRequest {
+  string user_id = 1;
+  repeated string notification_ids = 2;
+  bool mark_all = 3;
+  google.protobuf.Timestamp read_at = 4;
+}
+
+message MarkAsReadResponse {
+  int32 marked_count = 1;
+  bool success = 2;
+  string error_message = 3;
+  repeated string failed_ids = 4;
+}
+
+// Campaign messages
+message CreateCampaignRequest {
+  string name = 1;
+  string description = 2;
+  CampaignConfig config = 3;
+  NotificationTemplate template = 4;
+  TargetAudience audience = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+}
+
+message CreateCampaignResponse {
+  string campaign_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  CampaignStats initial_stats = 4;
+}
+
+message CampaignConfig {
+  DeliveryStrategy strategy = 1;
+  RateLimiting rate_limiting = 2;
+  bool enable_analytics = 3;
+  ABTestConfig ab_test = 4;
+  google.protobuf.Duration send_window = 5;
+}
+
+message ABTestConfig {
+  bool enabled = 1;
+  repeated ABVariant variants = 2;
+  double confidence_level = 3;
+  string primary_metric = 4;
+}
+
+message ABVariant {
+  string id = 1;
+  string name = 2;
+  double traffic_percentage = 3;
+  NotificationTemplate template = 4;
+}
+
+message TargetAudience {
+  repeated string user_ids = 1;
+  repeated AudienceFilter filters = 2;
+  AudienceSize estimated_size = 3;
+  bool exclude_opted_out = 4;
+}
+
+message AudienceFilter {
+  string field = 1;
+  FilterOperator operator = 2;
+  repeated string values = 3;
+}
+
+enum FilterOperator {
+  EQUALS = 0;
+  NOT_EQUALS = 1;
+  IN = 2;
+  NOT_IN = 3;
+  GREATER_THAN = 4;
+  LESS_THAN = 5;
+  CONTAINS = 6;
+  STARTS_WITH = 7;
+  ENDS_WITH = 8;
+}
+
+message AudienceSize {
+  int64 estimated_count = 1;
+  double confidence = 2;
+  google.protobuf.Timestamp calculated_at = 3;
+}
+
+// Analytics messages
+message GetDeliveryAnalyticsRequest {
+  string campaign_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+  repeated string metrics = 4;
+  repeated string dimensions = 5;
+  AnalyticsGranularity granularity = 6;
+}
+
+message GetDeliveryAnalyticsResponse {
+  CampaignStats stats = 1;
+  repeated AnalyticsDataPoint time_series = 2;
+  map<string, double> metric_totals = 3;
+  google.protobuf.Timestamp generated_at = 4;
+}
+
+message CampaignStats {
+  int64 total_sent = 1;
+  int64 total_delivered = 2;
+  int64 total_read = 3;
+  int64 total_clicked = 4;
+  int64 total_failed = 5;
+  double delivery_rate = 6;
+  double read_rate = 7;
+  double click_rate = 8;
+  double bounce_rate = 9;
+  map<DeliveryChannel, ChannelStats> channel_stats = 10;
+}
+
+message ChannelStats {
+  int64 sent = 1;
+  int64 delivered = 2;
+  int64 failed = 3;
+  double success_rate = 4;
+  google.protobuf.Duration avg_delivery_time = 5;
+}
+
+message AnalyticsDataPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  map<string, double> metrics = 2;
+  map<string, string> dimensions = 3;
+}
+
+enum AnalyticsGranularity {
+  MINUTE = 0;
+  HOUR = 1;
+  DAY = 2;
+  WEEK = 3;
+  MONTH = 4;
+}
+
+// Push subscription messages
+message ManagePushSubscriptionRequest {
+  string user_id = 1;
+  PushSubscriptionAction action = 2;
+  PushSubscription subscription = 3;
+}
+
+enum PushSubscriptionAction {
+  SUBSCRIBE = 0;
+  UNSUBSCRIBE = 1;
+  UPDATE = 2;
+  VERIFY = 3;
+}
+
+message ManagePushSubscriptionResponse {
+  bool success = 1;
+  string error_message = 2;
+  string subscription_id = 3;
+  google.protobuf.Timestamp expires_at = 4;
+}
+
+message PushSubscription {
+  string id = 1;
+  string endpoint = 2;
+  string user_agent = 3;
+  PushKeys keys = 4;
+  string platform = 5;
+  map<string, string> metadata = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp last_used = 8;
+  bool active = 9;
+}
+
+message PushKeys {
+  string p256dh = 1;
+  string auth = 2;
+}
+
+// Batch processing
+message BatchConfig {
+  int32 max_concurrent = 1;
+  google.protobuf.Duration timeout = 2;
+  bool continue_on_error = 3;
+  int32 retry_attempts = 4;
+}
+
+message BatchResult {
+  int32 index = 1;
+  bool success = 2;
+  string notification_id = 3;
+  string error_message = 4;
+  DeliveryStatus status = 5;
+}
+
+enum BatchStatus {
+  PROCESSING = 0;
+  COMPLETED = 1;
+  PARTIAL_SUCCESS = 2;
+  FAILED = 3;
+  CANCELLED = 4;
+}
