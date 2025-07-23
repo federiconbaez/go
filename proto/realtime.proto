@@ -1,0 +1,1119 @@
+syntax = "proto3";
+
+package realtime;
+
+option go_package = "github.com/example/notebook/proto/realtime";
+option java_package = "com.example.notebook.proto.realtime";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+// Real-time communication service for collaborative features
+service RealtimeService {
+  // Establish real-time connection
+  rpc Connect(ConnectRequest) returns (stream RealtimeMessage);
+  
+  // Send message to specific user/channel
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  
+  // Broadcast message to multiple recipients
+  rpc BroadcastMessage(BroadcastMessageRequest) returns (BroadcastMessageResponse);
+  
+  // Join a room/channel
+  rpc JoinRoom(JoinRoomRequest) returns (JoinRoomResponse);
+  
+  // Leave a room/channel
+  rpc LeaveRoom(LeaveRoomRequest) returns (LeaveRoomResponse);
+  
+  // Get online presence information
+  rpc GetPresence(GetPresenceRequest) returns (GetPresenceResponse);
+  
+  // Update user presence
+  rpc UpdatePresence(UpdatePresenceRequest) returns (UpdatePresenceResponse);
+  
+  // Collaborative document editing
+  rpc StartCollaboration(StartCollaborationRequest) returns (stream CollaborationEvent);
+  rpc SendEdit(SendEditRequest) returns (SendEditResponse);
+  
+  // Screen sharing
+  rpc StartScreenShare(StartScreenShareRequest) returns (StartScreenShareResponse);
+  rpc StreamScreenShare(stream ScreenShareChunk) returns (stream ScreenShareResponse);
+  
+  // Voice/Video calling
+  rpc InitiateCall(InitiateCallRequest) returns (InitiateCallResponse);
+  rpc HandleCallSignaling(stream CallSignal) returns (stream CallSignal);
+  
+  // File sharing and synchronization
+  rpc ShareFile(ShareFileRequest) returns (ShareFileResponse);
+  rpc SyncFiles(stream FileSyncEvent) returns (stream FileSyncResponse);
+  
+  // Real-time notifications
+  rpc SubscribeNotifications(NotificationSubscribeRequest) returns (stream NotificationEvent);
+  
+  // Room management
+  rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse);
+  rpc GetRoomInfo(GetRoomInfoRequest) returns (GetRoomInfoResponse);
+  rpc UpdateRoomSettings(UpdateRoomSettingsRequest) returns (UpdateRoomSettingsResponse);
+  
+  // Message history
+  rpc GetMessageHistory(GetMessageHistoryRequest) returns (GetMessageHistoryResponse);
+  
+  // Analytics and monitoring
+  rpc GetConnectionStats(GetConnectionStatsRequest) returns (GetConnectionStatsResponse);
+}
+
+// Connection management
+message ConnectRequest {
+  string user_id = 1;
+  string session_id = 2;
+  ConnectionConfig config = 3;
+  ClientInfo client_info = 4;
+  repeated string room_ids = 5;
+  AuthToken auth_token = 6;
+  map<string, string> metadata = 7;
+  ConnectionOptions options = 8;
+}
+
+message ConnectionConfig {
+  bool enable_presence = 1;
+  bool enable_typing_indicators = 2;
+  bool enable_read_receipts = 3;
+  bool auto_reconnect = 4;
+  google.protobuf.Duration heartbeat_interval = 5;
+  int32 max_reconnect_attempts = 6;
+  google.protobuf.Duration reconnect_delay = 7;
+  CompressionType compression = 8;
+  EncryptionLevel encryption = 9;
+}
+
+enum CompressionType {
+  NONE = 0;
+  GZIP = 1;
+  DEFLATE = 2;
+  BROTLI = 3;
+}
+
+enum EncryptionLevel {
+  NO_ENCRYPTION = 0;
+  TRANSPORT_ENCRYPTION = 1;
+  END_TO_END_ENCRYPTION = 2;
+}
+
+message ClientInfo {
+  string client_type = 1;
+  string version = 2;
+  string platform = 3;
+  string browser = 4;
+  string device_id = 5;
+  Capabilities capabilities = 6;
+  NetworkInfo network = 7;
+}
+
+message Capabilities {
+  bool supports_video = 1;
+  bool supports_audio = 2;
+  bool supports_screen_share = 3;
+  bool supports_file_transfer = 4;
+  repeated string supported_codecs = 5;
+  int32 max_video_resolution = 6;
+  int32 max_audio_bitrate = 7;
+}
+
+message NetworkInfo {
+  string connection_type = 1;
+  int32 bandwidth_kbps = 2;
+  int32 latency_ms = 3;
+  string ip_address = 4;
+  string location = 5;
+}
+
+message AuthToken {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+  repeated string permissions = 3;
+  string issuer = 4;
+}
+
+message ConnectionOptions {
+  int32 message_buffer_size = 1;
+  int32 max_message_size = 2;
+  google.protobuf.Duration connection_timeout = 3;
+  bool enable_metrics = 4;
+  QualityOfService qos = 5;
+}
+
+enum QualityOfService {
+  BEST_EFFORT = 0;
+  RELIABLE = 1;
+  ORDERED = 2;
+  RELIABLE_ORDERED = 3;
+}
+
+// Real-time messages
+message RealtimeMessage {
+  string id = 1;
+  MessageType type = 2;
+  string sender_id = 3;
+  repeated string recipient_ids = 4;
+  string room_id = 5;
+  google.protobuf.Any payload = 6;
+  google.protobuf.Timestamp timestamp = 7;
+  MessagePriority priority = 8;
+  map<string, string> metadata = 9;
+  MessageFlags flags = 10;
+  string correlation_id = 11;
+  int32 sequence_number = 12;
+}
+
+enum MessageType {
+  CHAT = 0;
+  SYSTEM = 1;
+  TYPING = 2;
+  PRESENCE = 3;
+  EDIT = 4;
+  NOTIFICATION = 5;
+  CALL_SIGNAL = 6;
+  FILE_SHARE = 7;
+  SCREEN_SHARE = 8;
+  HEARTBEAT = 9;
+  ERROR = 10;
+  ACK = 11;
+  CUSTOM = 12;
+}
+
+enum MessagePriority {
+  LOW = 0;
+  NORMAL = 1;
+  HIGH = 2;
+  URGENT = 3;
+}
+
+message MessageFlags {
+  bool encrypted = 1;
+  bool compressed = 2;
+  bool requires_ack = 3;
+  bool ephemeral = 4;
+  bool broadcast = 5;
+  google.protobuf.Duration ttl = 6;
+}
+
+// Chat messaging
+message SendMessageRequest {
+  string sender_id = 1;
+  string recipient_id = 2;
+  string room_id = 3;
+  ChatMessage message = 4;
+  MessageOptions options = 5;
+}
+
+message SendMessageResponse {
+  string message_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  google.protobuf.Timestamp delivered_at = 4;
+  DeliveryStatus status = 5;
+}
+
+message BroadcastMessageRequest {
+  string sender_id = 1;
+  repeated string recipient_ids = 2;
+  repeated string room_ids = 3;
+  ChatMessage message = 4;
+  BroadcastOptions options = 5;
+}
+
+message BroadcastMessageResponse {
+  int32 successful_deliveries = 1;
+  int32 failed_deliveries = 2;
+  repeated DeliveryResult results = 3;
+  string broadcast_id = 4;
+}
+
+message ChatMessage {
+  string id = 1;
+  string text = 2;
+  MessageFormat format = 3;
+  repeated MediaAttachment attachments = 4;
+  repeated Mention mentions = 5;
+  repeated Reaction reactions = 6;
+  string reply_to_id = 7;
+  bool edited = 8;
+  google.protobuf.Timestamp edited_at = 9;
+  ThreadInfo thread = 10;
+  map<string, google.protobuf.Any> custom_data = 11;
+}
+
+enum MessageFormat {
+  PLAIN_TEXT = 0;
+  MARKDOWN = 1;
+  HTML = 2;
+  RICH_TEXT = 3;
+}
+
+message MediaAttachment {
+  string id = 1;
+  string name = 2;
+  string url = 3;
+  string thumbnail_url = 4;
+  MediaType type = 5;
+  int64 size_bytes = 6;
+  string mime_type = 7;
+  map<string, string> metadata = 8;
+  UploadStatus upload_status = 9;
+}
+
+enum MediaType {
+  IMAGE = 0;
+  VIDEO = 1;
+  AUDIO = 2;
+  DOCUMENT = 3;
+  ARCHIVE = 4;
+  OTHER = 5;
+}
+
+enum UploadStatus {
+  PENDING = 0;
+  UPLOADING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+}
+
+message Mention {
+  string user_id = 1;
+  string username = 2;
+  int32 start_index = 3;
+  int32 end_index = 4;
+  MentionType type = 5;
+}
+
+enum MentionType {
+  USER = 0;
+  CHANNEL = 1;
+  EVERYONE = 2;
+  HERE = 3;
+}
+
+message Reaction {
+  string emoji = 1;
+  repeated string user_ids = 2;
+  int32 count = 3;
+}
+
+message ThreadInfo {
+  string thread_id = 1;
+  int32 reply_count = 2;
+  google.protobuf.Timestamp last_reply_at = 3;
+  repeated string participant_ids = 4;
+}
+
+message MessageOptions {
+  bool silent = 1;
+  google.protobuf.Duration ttl = 2;
+  bool encrypt = 3;
+  MessagePriority priority = 4;
+  repeated string tags = 5;
+}
+
+message BroadcastOptions {
+  bool parallel_delivery = 1;
+  int32 max_concurrent = 2;
+  google.protobuf.Duration timeout = 3;
+  bool continue_on_error = 4;
+  MessageOptions message_options = 5;
+}
+
+message DeliveryResult {
+  string recipient_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  google.protobuf.Timestamp delivered_at = 4;
+}
+
+enum DeliveryStatus {
+  PENDING = 0;
+  DELIVERED = 1;
+  READ = 2;
+  FAILED = 3;
+}
+
+// Room management
+message JoinRoomRequest {
+  string user_id = 1;
+  string room_id = 2;
+  JoinOptions options = 3;
+  string access_token = 4;
+}
+
+message JoinRoomResponse {
+  bool success = 1;
+  string error_message = 2;
+  RoomInfo room_info = 3;
+  repeated UserPresence participants = 4;
+  JoinResult result = 5;
+}
+
+message LeaveRoomRequest {
+  string user_id = 1;
+  string room_id = 2;
+  LeaveReason reason = 3;
+}
+
+message LeaveRoomResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp left_at = 3;
+}
+
+message JoinOptions {
+  bool silent_join = 1;
+  UserPresence initial_presence = 2;
+  bool request_history = 3;
+  int32 history_limit = 4;
+  map<string, string> metadata = 5;
+}
+
+enum JoinResult {
+  JOINED = 0;
+  ALREADY_JOINED = 1;
+  PERMISSION_DENIED = 2;
+  ROOM_FULL = 3;
+  ROOM_NOT_FOUND = 4;
+}
+
+enum LeaveReason {
+  VOLUNTARY = 0;
+  KICKED = 1;
+  BANNED = 2;
+  CONNECTION_LOST = 3;
+  TIMEOUT = 4;
+}
+
+message CreateRoomRequest {
+  string creator_id = 1;
+  RoomConfig config = 2;
+  repeated string initial_members = 3;
+}
+
+message CreateRoomResponse {
+  string room_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  RoomInfo room_info = 4;
+}
+
+message GetRoomInfoRequest {
+  string room_id = 1;
+  string user_id = 2;
+  bool include_participants = 3;
+  bool include_history = 4;
+}
+
+message GetRoomInfoResponse {
+  RoomInfo room_info = 1;
+  repeated UserPresence participants = 2;
+  repeated ChatMessage recent_messages = 3;
+  RoomStats stats = 4;
+}
+
+message UpdateRoomSettingsRequest {
+  string room_id = 1;
+  string user_id = 2;
+  RoomConfig config = 3;
+}
+
+message UpdateRoomSettingsResponse {
+  bool success = 1;
+  string error_message = 2;
+  RoomInfo updated_room = 3;
+}
+
+message RoomInfo {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  RoomType type = 4;
+  RoomConfig config = 5;
+  string creator_id = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  int32 participant_count = 9;
+  int32 max_participants = 10;
+  repeated string tags = 11;
+  string avatar_url = 12;
+}
+
+enum RoomType {
+  PUBLIC = 0;
+  PRIVATE = 1;
+  DIRECT_MESSAGE = 2;
+  GROUP_CHAT = 3;
+  CHANNEL = 4;
+  WORKSPACE = 5;
+}
+
+message RoomConfig {
+  int32 max_participants = 1;
+  bool allow_guest_access = 2;
+  bool moderated = 3;
+  bool persistent_history = 4;
+  google.protobuf.Duration message_retention = 5;
+  repeated RoomPermission permissions = 6;
+  ModerationSettings moderation = 7;
+  IntegrationSettings integrations = 8;
+}
+
+message RoomPermission {
+  string user_id = 1;
+  RoleType role = 2;
+  repeated Permission permissions = 3;
+  google.protobuf.Timestamp granted_at = 4;
+}
+
+enum RoleType {
+  MEMBER = 0;
+  MODERATOR = 1;
+  ADMIN = 2;
+  OWNER = 3;
+}
+
+enum Permission {
+  READ_MESSAGES = 0;
+  SEND_MESSAGES = 1;
+  DELETE_MESSAGES = 2;
+  EDIT_MESSAGES = 3;
+  INVITE_USERS = 4;
+  REMOVE_USERS = 5;
+  MODERATE_ROOM = 6;
+  MANAGE_SETTINGS = 7;
+}
+
+message ModerationSettings {
+  bool auto_moderation = 1;
+  repeated string blocked_words = 2;
+  bool require_approval = 3;
+  int32 slow_mode_delay = 4;
+  repeated ModerationRule rules = 5;
+}
+
+message ModerationRule {
+  string id = 1;
+  string name = 2;
+  RuleType type = 3;
+  string condition = 4;
+  ModerationAction action = 5;
+  bool enabled = 6;
+}
+
+enum RuleType {
+  CONTENT_FILTER = 0;
+  RATE_LIMIT = 1;
+  SPAM_DETECTION = 2;
+  LINK_FILTER = 3;
+  CUSTOM = 4;
+}
+
+enum ModerationAction {
+  WARN = 0;
+  DELETE_MESSAGE = 1;
+  MUTE_USER = 2;
+  KICK_USER = 3;
+  BAN_USER = 4;
+}
+
+message IntegrationSettings {
+  bool allow_bots = 1;
+  bool allow_webhooks = 2;
+  repeated string enabled_integrations = 3;
+  map<string, google.protobuf.Any> integration_configs = 4;
+}
+
+message RoomStats {
+  int32 total_messages = 1;
+  int32 active_participants = 2;
+  google.protobuf.Timestamp last_activity = 3;
+  int64 total_bytes_transferred = 4;
+  map<string, int32> message_types = 5;
+}
+
+// Presence management
+message GetPresenceRequest {
+  repeated string user_ids = 1;
+  string room_id = 2;
+  bool include_activities = 3;
+}
+
+message GetPresenceResponse {
+  repeated UserPresence presences = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
+
+message UpdatePresenceRequest {
+  string user_id = 1;
+  UserPresence presence = 2;
+  repeated string room_ids = 3;
+}
+
+message UpdatePresenceResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}
+
+message UserPresence {
+  string user_id = 1;
+  PresenceStatus status = 2;
+  string status_message = 3;
+  google.protobuf.Timestamp last_seen = 4;
+  google.protobuf.Timestamp status_updated = 5;
+  repeated Activity activities = 6;
+  DeviceInfo device = 7;
+  LocationInfo location = 8;
+  map<string, string> custom_fields = 9;
+}
+
+enum PresenceStatus {
+  ONLINE = 0;
+  AWAY = 1;
+  BUSY = 2;
+  OFFLINE = 3;
+  INVISIBLE = 4;
+}
+
+message Activity {
+  ActivityType type = 1;
+  string description = 2;
+  google.protobuf.Timestamp started_at = 3;
+  map<string, string> details = 4;
+}
+
+enum ActivityType {
+  TYPING = 0;
+  VIEWING_DOCUMENT = 1;
+  EDITING_DOCUMENT = 2;
+  IN_CALL = 3;
+  SCREEN_SHARING = 4;
+  IDLE = 5;
+  CUSTOM_ACTIVITY = 6;
+}
+
+message DeviceInfo {
+  string device_id = 1;
+  string device_type = 2;
+  string os = 3;
+  string browser = 4;
+  bool is_mobile = 5;
+}
+
+message LocationInfo {
+  string timezone = 1;
+  string country = 2;
+  string city = 3;
+  double latitude = 4;
+  double longitude = 5;
+}
+
+// Collaborative editing
+message StartCollaborationRequest {
+  string user_id = 1;
+  string document_id = 2;
+  CollaborationMode mode = 3;
+  CollaborationOptions options = 4;
+}
+
+enum CollaborationMode {
+  VIEW_ONLY = 0;
+  EDIT = 1;
+  COMMENT = 2;
+  SUGGEST = 3;
+}
+
+message CollaborationOptions {
+  bool enable_cursors = 1;
+  bool enable_selections = 2;
+  bool enable_awareness = 3;
+  bool enable_undo_redo = 4;
+  ConflictResolution conflict_resolution = 5;
+}
+
+enum ConflictResolution {
+  LAST_WRITE_WINS = 0;
+  OPERATIONAL_TRANSFORM = 1;
+  CRDT = 2;
+}
+
+message CollaborationEvent {
+  string id = 1;
+  CollaborationEventType type = 2;
+  string user_id = 3;
+  string document_id = 4;
+  google.protobuf.Any data = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  int32 version = 7;
+  string parent_id = 8;
+}
+
+enum CollaborationEventType {
+  USER_JOINED = 0;
+  USER_LEFT = 1;
+  CURSOR_MOVED = 2;
+  SELECTION_CHANGED = 3;
+  TEXT_INSERTED = 4;
+  TEXT_DELETED = 5;
+  TEXT_FORMATTED = 6;
+  COMMENT_ADDED = 7;
+  COMMENT_RESOLVED = 8;
+  SUGGESTION_MADE = 9;
+  SUGGESTION_ACCEPTED = 10;
+  UNDO = 11;
+  REDO = 12;
+}
+
+message SendEditRequest {
+  string user_id = 1;
+  string document_id = 2;
+  EditOperation operation = 3;
+  int32 document_version = 4;
+}
+
+message SendEditResponse {
+  bool success = 1;
+  string error_message = 2;
+  int32 new_version = 3;
+  EditOperation transformed_operation = 4;
+}
+
+message EditOperation {
+  OperationType type = 1;
+  int32 position = 2;
+  string content = 3;
+  int32 length = 4;
+  map<string, google.protobuf.Any> attributes = 5;
+  string operation_id = 6;
+}
+
+enum OperationType {
+  INSERT = 0;
+  DELETE = 1;
+  RETAIN = 2;
+  FORMAT = 3;
+}
+
+// Screen sharing
+message StartScreenShareRequest {
+  string user_id = 1;
+  string room_id = 2;
+  ScreenShareConfig config = 3;
+}
+
+message StartScreenShareResponse {
+  bool success = 1;
+  string error_message = 2;
+  string share_id = 3;
+  string stream_url = 4;
+}
+
+message ScreenShareConfig {
+  ScreenCaptureType capture_type = 1;
+  int32 frame_rate = 2;
+  VideoQuality quality = 3;
+  bool include_audio = 4;
+  bool allow_control = 5;
+  repeated string viewer_ids = 6;
+}
+
+enum ScreenCaptureType {
+  FULL_SCREEN = 0;
+  WINDOW = 1;
+  APPLICATION = 2;
+  REGION = 3;
+}
+
+enum VideoQuality {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  ULTRA = 3;
+}
+
+message ScreenShareChunk {
+  string share_id = 1;
+  bytes video_data = 2;
+  bytes audio_data = 3;
+  int32 frame_number = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  ChunkMetadata metadata = 6;
+}
+
+message ChunkMetadata {
+  string codec = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 bitrate = 4;
+  bool is_keyframe = 5;
+}
+
+message ScreenShareResponse {
+  string share_id = 1;
+  ResponseType type = 2;
+  string message = 3;
+  ControlEvent control_event = 4;
+}
+
+enum ResponseType {
+  ACK = 0;
+  ERROR = 1;
+  CONTROL = 2;
+  STATUS = 3;
+}
+
+message ControlEvent {
+  ControlType type = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 button = 4;
+  string key = 5;
+  map<string, string> parameters = 6;
+}
+
+enum ControlType {
+  MOUSE_MOVE = 0;
+  MOUSE_CLICK = 1;
+  MOUSE_SCROLL = 2;
+  KEY_PRESS = 3;
+  KEY_RELEASE = 4;
+}
+
+// Voice/Video calling
+message InitiateCallRequest {
+  string caller_id = 1;
+  repeated string participant_ids = 2;
+  string room_id = 3;
+  CallType type = 4;
+  CallConfig config = 5;
+}
+
+message InitiateCallResponse {
+  string call_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  CallInfo call_info = 4;
+}
+
+enum CallType {
+  AUDIO_ONLY = 0;
+  VIDEO = 1;
+  SCREEN_SHARE_ONLY = 2;
+  MIXED = 3;
+}
+
+message CallConfig {
+  int32 max_participants = 1;
+  bool recording_enabled = 2;
+  VideoCodec video_codec = 3;
+  AudioCodec audio_codec = 4;
+  BitrateSettings bitrate = 5;
+  bool echo_cancellation = 6;
+  bool noise_suppression = 7;
+}
+
+enum VideoCodec {
+  VP8 = 0;
+  VP9 = 1;
+  H264 = 2;
+  AV1 = 3;
+}
+
+enum AudioCodec {
+  OPUS = 0;
+  G722 = 1;
+  PCMU = 2;
+  PCMA = 3;
+}
+
+message BitrateSettings {
+  int32 video_bitrate = 1;
+  int32 audio_bitrate = 2;
+  bool adaptive_bitrate = 3;
+  int32 min_bitrate = 4;
+  int32 max_bitrate = 5;
+}
+
+message CallInfo {
+  string id = 1;
+  CallType type = 2;
+  CallStatus status = 3;
+  repeated CallParticipant participants = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Duration duration = 6;
+  CallConfig config = 7;
+}
+
+enum CallStatus {
+  INITIATING = 0;
+  RINGING = 1;
+  CONNECTING = 2;
+  CONNECTED = 3;
+  ON_HOLD = 4;
+  ENDED = 5;
+  FAILED = 6;
+}
+
+message CallParticipant {
+  string user_id = 1;
+  ParticipantStatus status = 2;
+  bool audio_enabled = 3;
+  bool video_enabled = 4;
+  bool screen_sharing = 5;
+  google.protobuf.Timestamp joined_at = 6;
+  NetworkQuality network_quality = 7;
+}
+
+enum ParticipantStatus {
+  INVITED = 0;
+  RINGING = 1;
+  JOINED = 2;
+  LEFT = 3;
+  DISCONNECTED = 4;
+}
+
+message NetworkQuality {
+  QualityLevel level = 1;
+  int32 latency_ms = 2;
+  double packet_loss = 3;
+  int32 jitter_ms = 4;
+  int32 bandwidth_kbps = 5;
+}
+
+enum QualityLevel {
+  POOR = 0;
+  FAIR = 1;
+  GOOD = 2;
+  EXCELLENT = 3;
+}
+
+message CallSignal {
+  string call_id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  SignalType type = 4;
+  google.protobuf.Any data = 5;
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+enum SignalType {
+  OFFER = 0;
+  ANSWER = 1;
+  ICE_CANDIDATE = 2;
+  HANG_UP = 3;
+  MUTE = 4;
+  UNMUTE = 5;
+  VIDEO_ON = 6;
+  VIDEO_OFF = 7;
+}
+
+// File sharing
+message ShareFileRequest {
+  string sender_id = 1;
+  repeated string recipient_ids = 2;
+  string room_id = 3;
+  FileInfo file_info = 4;
+  ShareOptions options = 5;
+}
+
+message ShareFileResponse {
+  string share_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  string download_url = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message FileInfo {
+  string id = 1;
+  string name = 2;
+  int64 size_bytes = 3;
+  string mime_type = 4;
+  string checksum = 5;
+  bytes thumbnail = 6;
+  map<string, string> metadata = 7;
+}
+
+message ShareOptions {
+  bool encrypt_file = 1;
+  google.protobuf.Duration expiry_time = 2;
+  int32 max_downloads = 3;
+  bool require_auth = 4;
+  string password = 5;
+}
+
+message FileSyncEvent {
+  string user_id = 1;
+  SyncEventType type = 2;
+  FileInfo file_info = 3;
+  bytes chunk_data = 4;
+  int32 chunk_index = 5;
+  int32 total_chunks = 6;
+  string sync_id = 7;
+}
+
+enum SyncEventType {
+  FILE_CREATED = 0;
+  FILE_UPDATED = 1;
+  FILE_DELETED = 2;
+  FILE_MOVED = 3;
+  CHUNK_UPLOAD = 4;
+  SYNC_COMPLETE = 5;
+}
+
+message FileSyncResponse {
+  string sync_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  SyncStatus status = 4;
+  int32 processed_chunks = 5;
+}
+
+enum SyncStatus {
+  PENDING = 0;
+  IN_PROGRESS = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+  CANCELLED = 4;
+}
+
+// Notifications
+message NotificationSubscribeRequest {
+  string user_id = 1;
+  repeated NotificationFilter filters = 2;
+  SubscriptionOptions options = 3;
+}
+
+message NotificationFilter {
+  NotificationCategory category = 1;
+  repeated string event_types = 2;
+  repeated string source_ids = 3;
+  NotificationPriority min_priority = 4;
+}
+
+enum NotificationCategory {
+  CHAT = 0;
+  COLLABORATION = 1;
+  SYSTEM = 2;
+  SECURITY = 3;
+  WORKFLOW = 4;
+}
+
+enum NotificationPriority {
+  LOW = 0;
+  NORMAL = 1;
+  HIGH = 2;
+  URGENT = 3;
+}
+
+message SubscriptionOptions {
+  bool real_time_only = 1;
+  bool include_historical = 2;
+  int32 history_limit = 3;
+  google.protobuf.Duration buffer_time = 4;
+}
+
+message NotificationEvent {
+  string id = 1;
+  NotificationCategory category = 2;
+  string event_type = 3;
+  string title = 4;
+  string message = 5;
+  string source_id = 6;
+  NotificationPriority priority = 7;
+  google.protobuf.Timestamp timestamp = 8;
+  google.protobuf.Any data = 9;
+  repeated NotificationAction actions = 10;
+}
+
+message NotificationAction {
+  string id = 1;
+  string label = 2;
+  ActionType type = 3;
+  string action_url = 4;
+  map<string, string> parameters = 5;
+}
+
+enum ActionType {
+  NAVIGATE = 0;
+  API_CALL = 1;
+  DISMISS = 2;
+  SNOOZE = 3;
+  CUSTOM = 4;
+}
+
+// Message history
+message GetMessageHistoryRequest {
+  string room_id = 1;
+  string user_id = 2;
+  google.protobuf.Timestamp start_time = 3;
+  google.protobuf.Timestamp end_time = 4;
+  int32 limit = 5;
+  string cursor = 6;
+  HistoryFilter filter = 7;
+}
+
+message GetMessageHistoryResponse {
+  repeated ChatMessage messages = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+message HistoryFilter {
+  repeated MessageType message_types = 1;
+  repeated string sender_ids = 2;
+  string search_query = 3;
+  bool include_deleted = 4;
+  bool include_system = 5;
+}
+
+// Analytics and monitoring
+message GetConnectionStatsRequest {
+  string user_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+  StatsGranularity granularity = 4;
+}
+
+message GetConnectionStatsResponse {
+  ConnectionStats current_stats = 1;
+  repeated StatsDataPoint historical_stats = 2;
+  Performance performance = 3;
+}
+
+enum StatsGranularity {
+  MINUTE = 0;
+  HOUR = 1;
+  DAY = 2;
+}
+
+message ConnectionStats {
+  int32 active_connections = 1;
+  int32 total_messages_sent = 2;
+  int32 total_messages_received = 3;
+  int64 total_bytes_sent = 4;
+  int64 total_bytes_received = 5;
+  google.protobuf.Duration average_latency = 6;
+  int32 failed_connections = 7;
+  int32 reconnections = 8;
+}
+
+message StatsDataPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  ConnectionStats stats = 2;
+}
+
+message Performance {
+  google.protobuf.Duration average_message_latency = 1;
+  google.protobuf.Duration p95_message_latency = 2;
+  double message_loss_rate = 3;
+  double connection_success_rate = 4;
+  int32 peak_concurrent_connections = 5;
+}
