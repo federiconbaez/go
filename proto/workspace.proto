@@ -1,0 +1,1431 @@
+syntax = "proto3";
+
+package workspace;
+
+option go_package = "github.com/example/notebook/proto/workspace";
+option java_package = "com.example.notebook.proto.workspace";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+// Workspace management service for collaborative work environments
+service WorkspaceService {
+  // Workspace management
+  rpc CreateWorkspace(CreateWorkspaceRequest) returns (CreateWorkspaceResponse);
+  rpc GetWorkspace(GetWorkspaceRequest) returns (GetWorkspaceResponse);
+  rpc UpdateWorkspace(UpdateWorkspaceRequest) returns (UpdateWorkspaceResponse);
+  rpc DeleteWorkspace(DeleteWorkspaceRequest) returns (DeleteWorkspaceResponse);
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse);
+  
+  // Member management
+  rpc InviteMember(InviteMemberRequest) returns (InviteMemberResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  rpc UpdateMemberRole(UpdateMemberRoleRequest) returns (UpdateMemberRoleResponse);
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  
+  // Project management
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  
+  // Real-time collaboration
+  rpc JoinCollaboration(JoinCollaborationRequest) returns (stream CollaborationEvent);
+  rpc SendCollaborationEvent(SendCollaborationEventRequest) returns (SendCollaborationEventResponse);
+  
+  // Resource management
+  rpc ManageResource(ManageResourceRequest) returns (ManageResourceResponse);
+  rpc GetResourceUsage(GetResourceUsageRequest) returns (GetResourceUsageResponse);
+  
+  // Activity tracking
+  rpc GetActivityFeed(GetActivityFeedRequest) returns (GetActivityFeedResponse);
+  rpc LogActivity(LogActivityRequest) returns (LogActivityResponse);
+  
+  // Integration management
+  rpc CreateIntegration(CreateIntegrationRequest) returns (CreateIntegrationResponse);
+  rpc GetIntegrations(GetIntegrationsRequest) returns (GetIntegrationsResponse);
+  
+  // Template management
+  rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse);
+  rpc GetTemplates(GetTemplatesRequest) returns (GetTemplatesResponse);
+  
+  // Workflow automation
+  rpc CreateWorkflow(CreateWorkflowRequest) returns (CreateWorkflowResponse);
+  rpc ExecuteWorkflow(ExecuteWorkflowRequest) returns (ExecuteWorkflowResponse);
+}
+
+// Core workspace messages
+message CreateWorkspaceRequest {
+  string name = 1;
+  string description = 2;
+  WorkspaceType type = 3;
+  WorkspaceSettings settings = 4;
+  string owner_id = 5;
+  repeated string initial_members = 6;
+  string template_id = 7;
+  map<string, google.protobuf.Any> metadata = 8;
+}
+
+message CreateWorkspaceResponse {
+  string workspace_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  Workspace workspace = 4;
+  string invitation_link = 5;
+}
+
+message GetWorkspaceRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  bool include_members = 3;
+  bool include_projects = 4;
+  bool include_settings = 5;
+}
+
+message GetWorkspaceResponse {
+  Workspace workspace = 1;
+  repeated Member members = 2;
+  repeated Project projects = 3;
+  WorkspaceStats stats = 4;
+  UserPermissions user_permissions = 5;
+}
+
+message UpdateWorkspaceRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  WorkspaceUpdate update = 3;
+}
+
+message UpdateWorkspaceResponse {
+  bool success = 1;
+  string error_message = 2;
+  Workspace updated_workspace = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message DeleteWorkspaceRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  bool force_delete = 3;
+  string confirmation_token = 4;
+}
+
+message DeleteWorkspaceResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp deleted_at = 3;
+}
+
+message ListWorkspacesRequest {
+  string user_id = 1;
+  WorkspaceFilter filter = 2;
+  int32 limit = 3;
+  string cursor = 4;
+  SortOptions sort_options = 5;
+}
+
+message ListWorkspacesResponse {
+  repeated WorkspaceSummary workspaces = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+// Core data structures
+message Workspace {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  WorkspaceType type = 4;
+  WorkspaceStatus status = 5;
+  string owner_id = 6;
+  WorkspaceSettings settings = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp last_activity = 10;
+  map<string, google.protobuf.Any> metadata = 11;
+  string avatar_url = 12;
+  repeated string tags = 13;
+  BillingInfo billing = 14;
+  ComplianceInfo compliance = 15;
+}
+
+enum WorkspaceType {
+  PERSONAL = 0;
+  TEAM = 1;
+  ORGANIZATION = 2;
+  ENTERPRISE = 3;
+  EDUCATIONAL = 4;
+  OPEN_SOURCE = 5;
+}
+
+enum WorkspaceStatus {
+  ACTIVE = 0;
+  SUSPENDED = 1;
+  ARCHIVED = 2;
+  PENDING_SETUP = 3;
+  MIGRATING = 4;
+  DELETED = 5;
+}
+
+message WorkspaceSettings {
+  Privacy privacy = 1;
+  CollaborationSettings collaboration = 2;
+  SecuritySettings security = 3;
+  NotificationSettings notifications = 4;
+  IntegrationSettings integrations = 5;
+  CustomizationSettings customization = 6;
+  RetentionSettings retention = 7;
+  BackupSettings backup = 8;
+}
+
+message Privacy {
+  VisibilityLevel visibility = 1;
+  bool allow_discovery = 2;
+  bool require_invitation = 3;
+  string join_code = 4;
+  google.protobuf.Timestamp join_code_expires = 5;
+}
+
+enum VisibilityLevel {
+  PRIVATE = 0;
+  INTERNAL = 1;
+  PUBLIC = 2;
+}
+
+message CollaborationSettings {
+  bool real_time_editing = 1;
+  ConflictResolution conflict_resolution = 2;
+  int32 max_concurrent_editors = 3;
+  google.protobuf.Duration session_timeout = 4;
+  bool enable_comments = 5;
+  bool enable_suggestions = 6;
+  VersionControl version_control = 7;
+}
+
+enum ConflictResolution {
+  LAST_WRITE_WINS = 0;
+  OPERATIONAL_TRANSFORM = 1;
+  MERGE_STRATEGY = 2;
+  MANUAL_RESOLUTION = 3;
+}
+
+message VersionControl {
+  bool enabled = 1;
+  int32 max_versions = 2;
+  google.protobuf.Duration retention_period = 3;
+  bool auto_save = 4;
+  google.protobuf.Duration auto_save_interval = 5;
+}
+
+message SecuritySettings {
+  bool two_factor_required = 1;
+  bool sso_required = 2;
+  repeated string allowed_domains = 3;
+  PasswordPolicy password_policy = 4;
+  SessionSettings session_settings = 5;
+  AuditSettings audit = 6;
+  DataEncryption encryption = 7;
+}
+
+message PasswordPolicy {
+  int32 min_length = 1;
+  bool require_uppercase = 2;
+  bool require_lowercase = 3;
+  bool require_numbers = 4;
+  bool require_symbols = 5;
+  int32 history_count = 6;
+  google.protobuf.Duration expiry_period = 7;
+}
+
+message SessionSettings {
+  google.protobuf.Duration max_session_duration = 1;
+  google.protobuf.Duration idle_timeout = 2;
+  bool concurrent_sessions_allowed = 3;
+  int32 max_concurrent_sessions = 4;
+}
+
+message AuditSettings {
+  bool enabled = 1;
+  repeated AuditEvent monitored_events = 2;
+  google.protobuf.Duration retention_period = 3;
+  bool export_enabled = 4;
+}
+
+enum AuditEvent {
+  LOGIN = 0;
+  LOGOUT = 1;
+  DOCUMENT_ACCESS = 2;
+  DOCUMENT_EDIT = 3;
+  MEMBER_INVITE = 4;
+  MEMBER_REMOVE = 5;
+  PERMISSION_CHANGE = 6;
+  SETTING_CHANGE = 7;
+  DATA_EXPORT = 8;
+}
+
+message DataEncryption {
+  bool encrypt_at_rest = 1;
+  bool encrypt_in_transit = 2;
+  string encryption_algorithm = 3;
+  KeyManagement key_management = 4;
+}
+
+message KeyManagement {
+  KeyProvider provider = 1;
+  string key_id = 2;
+  google.protobuf.Duration rotation_period = 3;
+}
+
+enum KeyProvider {
+  PLATFORM_MANAGED = 0;
+  USER_MANAGED = 1;
+  HSM = 2;
+  EXTERNAL_KMS = 3;
+}
+
+message NotificationSettings {
+  bool email_notifications = 1;
+  bool push_notifications = 2;
+  bool slack_notifications = 3;
+  repeated NotificationEvent enabled_events = 4;
+  DigestSettings digest = 5;
+}
+
+enum NotificationEvent {
+  MEMBER_JOINED = 0;
+  MEMBER_LEFT = 1;
+  PROJECT_CREATED = 2;
+  PROJECT_UPDATED = 3;
+  DOCUMENT_SHARED = 4;
+  COMMENT_ADDED = 5;
+  MENTION = 6;
+  DEADLINE_APPROACHING = 7;
+}
+
+message DigestSettings {
+  bool enabled = 1;
+  DigestFrequency frequency = 2;
+  string time_of_day = 3;
+  string timezone = 4;
+}
+
+enum DigestFrequency {
+  DAILY = 0;
+  WEEKLY = 1;
+  MONTHLY = 2;
+}
+
+message IntegrationSettings {
+  repeated IntegrationType allowed_integrations = 1;
+  bool allow_third_party = 2;
+  DataSharingPolicy data_sharing = 3;
+}
+
+enum IntegrationType {
+  GITHUB = 0;
+  SLACK = 1;
+  JIRA = 2;
+  CONFLUENCE = 3;
+  GOOGLE_DRIVE = 4;
+  DROPBOX = 5;
+  TRELLO = 6;
+  ASANA = 7;
+  CUSTOM_WEBHOOK = 8;
+}
+
+message DataSharingPolicy {
+  bool allow_read_access = 1;
+  bool allow_write_access = 2;
+  bool allow_metadata_sharing = 3;
+  repeated string restricted_fields = 4;
+}
+
+message CustomizationSettings {
+  string theme = 1;
+  string logo_url = 2;
+  map<string, string> brand_colors = 3;
+  string custom_domain = 4;
+  map<string, google.protobuf.Any> custom_fields = 5;
+}
+
+message RetentionSettings {
+  bool enabled = 1;
+  google.protobuf.Duration document_retention = 2;
+  google.protobuf.Duration activity_retention = 3;
+  google.protobuf.Duration deleted_item_retention = 4;
+  bool legal_hold = 5;
+}
+
+message BackupSettings {
+  bool enabled = 1;
+  BackupFrequency frequency = 2;
+  int32 retention_count = 3;
+  bool encrypt_backups = 4;
+  repeated BackupLocation locations = 5;
+}
+
+enum BackupFrequency {
+  HOURLY = 0;
+  DAILY = 1;
+  WEEKLY = 2;
+  MONTHLY = 3;
+}
+
+message BackupLocation {
+  BackupProvider provider = 1;
+  string location = 2;
+  map<string, string> credentials = 3;
+}
+
+enum BackupProvider {
+  INTERNAL = 0;
+  AWS_S3 = 1;
+  GOOGLE_CLOUD_STORAGE = 2;
+  AZURE_BLOB = 3;
+  CUSTOM = 4;
+}
+
+message BillingInfo {
+  BillingPlan plan = 1;
+  BillingStatus status = 2;
+  google.protobuf.Timestamp billing_cycle_start = 3;
+  google.protobuf.Timestamp billing_cycle_end = 4;
+  ResourceUsage usage = 5;
+  ResourceLimits limits = 6;
+}
+
+enum BillingPlan {
+  FREE = 0;
+  BASIC = 1;
+  PROFESSIONAL = 2;
+  ENTERPRISE = 3;
+  CUSTOM = 4;
+}
+
+enum BillingStatus {
+  ACTIVE = 0;
+  PAST_DUE = 1;
+  CANCELLED = 2;
+  TRIAL = 3;
+  SUSPENDED = 4;
+}
+
+message ResourceUsage {
+  int64 storage_bytes = 1;
+  int64 bandwidth_bytes = 2;
+  int32 active_users = 3;
+  int32 projects = 4;
+  int32 api_calls = 5;
+  int32 integrations = 6;
+}
+
+message ResourceLimits {
+  int64 max_storage_bytes = 1;
+  int64 max_bandwidth_bytes = 2;
+  int32 max_users = 3;
+  int32 max_projects = 4;
+  int32 max_api_calls = 5;
+  int32 max_integrations = 6;
+}
+
+message ComplianceInfo {
+  repeated ComplianceStandard standards = 1;
+  DataResidency data_residency = 2;
+  google.protobuf.Timestamp last_audit = 3;
+  string compliance_officer_id = 4;
+}
+
+enum ComplianceStandard {
+  GDPR = 0;
+  CCPA = 1;
+  HIPAA = 2;
+  SOC2 = 3;
+  ISO27001 = 4;
+  PCI_DSS = 5;
+}
+
+message DataResidency {
+  string region = 1;
+  string country = 2;
+  bool data_localization_required = 3;
+  repeated string allowed_regions = 4;
+}
+
+// Member management
+message InviteMemberRequest {
+  string workspace_id = 1;
+  string inviter_id = 2;
+  repeated MemberInvitation invitations = 3;
+  string message = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message MemberInvitation {
+  string email = 1;
+  Role role = 2;
+  repeated string project_ids = 3;
+  map<string, google.protobuf.Any> custom_data = 4;
+}
+
+message InviteMemberResponse {
+  repeated InvitationResult results = 1;
+  int32 successful_invitations = 2;
+  int32 failed_invitations = 3;
+}
+
+message InvitationResult {
+  string email = 1;
+  bool success = 2;
+  string error_message = 3;
+  string invitation_id = 4;
+  google.protobuf.Timestamp expires_at = 5;
+}
+
+message RemoveMemberRequest {
+  string workspace_id = 1;
+  string remover_id = 2;
+  string member_id = 3;
+  bool transfer_ownership = 4;
+  string new_owner_id = 5;
+  string reason = 6;
+}
+
+message RemoveMemberResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp removed_at = 3;
+}
+
+message UpdateMemberRoleRequest {
+  string workspace_id = 1;
+  string updater_id = 2;
+  string member_id = 3;
+  Role new_role = 4;
+  repeated string project_permissions = 5;
+}
+
+message UpdateMemberRoleResponse {
+  bool success = 1;
+  string error_message = 2;
+  Member updated_member = 3;
+}
+
+message ListMembersRequest {
+  string workspace_id = 1;
+  string requester_id = 2;
+  MemberFilter filter = 3;
+  int32 limit = 4;
+  string cursor = 5;
+}
+
+message ListMembersResponse {
+  repeated Member members = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+message Member {
+  string user_id = 1;
+  string email = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  Role role = 5;
+  MemberStatus status = 6;
+  google.protobuf.Timestamp joined_at = 7;
+  google.protobuf.Timestamp last_active = 8;
+  repeated Permission permissions = 9;
+  repeated string project_ids = 10;
+  map<string, google.protobuf.Any> profile_data = 11;
+}
+
+enum Role {
+  VIEWER = 0;
+  EDITOR = 1;
+  ADMIN = 2;
+  OWNER = 3;
+  CUSTOM = 4;
+}
+
+enum MemberStatus {
+  PENDING = 0;
+  ACTIVE = 1;
+  INACTIVE = 2;
+  SUSPENDED = 3;
+  INVITED = 4;
+}
+
+message Permission {
+  string resource_type = 1;
+  string resource_id = 2;
+  repeated Action allowed_actions = 3;
+  PermissionScope scope = 4;
+  google.protobuf.Timestamp granted_at = 5;
+  string granted_by = 6;
+}
+
+enum Action {
+  READ = 0;
+  WRITE = 1;
+  DELETE = 2;
+  ADMIN = 3;
+  SHARE = 4;
+  EXPORT = 5;
+  COMMENT = 6;
+}
+
+enum PermissionScope {
+  WORKSPACE = 0;
+  PROJECT = 1;
+  DOCUMENT = 2;
+  FOLDER = 3;
+}
+
+// Project management
+message CreateProjectRequest {
+  string workspace_id = 1;
+  string creator_id = 2;
+  string name = 3;
+  string description = 4;
+  ProjectType type = 5;
+  ProjectSettings settings = 6;
+  string template_id = 7;
+  repeated ResourceSpec initial_resources = 8;
+}
+
+message CreateProjectResponse {
+  string project_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  Project project = 4;
+}
+
+message GetProjectRequest {
+  string project_id = 1;
+  string user_id = 2;
+  bool include_resources = 3;
+  bool include_members = 4;
+  bool include_activity = 5;
+}
+
+message GetProjectResponse {
+  Project project = 1;
+  repeated ProjectResource resources = 2;
+  repeated Member members = 3;
+  repeated ActivityItem recent_activity = 4;
+  ProjectStats stats = 5;
+}
+
+message UpdateProjectRequest {
+  string project_id = 1;
+  string user_id = 2;
+  ProjectUpdate update = 3;
+}
+
+message UpdateProjectResponse {
+  bool success = 1;
+  string error_message = 2;
+  Project updated_project = 3;
+}
+
+message DeleteProjectRequest {
+  string project_id = 1;
+  string user_id = 2;
+  bool archive_only = 3;
+  string confirmation_token = 4;
+}
+
+message DeleteProjectResponse {
+  bool success = 1;
+  string error_message = 2;
+  google.protobuf.Timestamp deleted_at = 3;
+}
+
+message ListProjectsRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  ProjectFilter filter = 3;
+  int32 limit = 4;
+  string cursor = 5;
+  SortOptions sort_options = 6;
+}
+
+message ListProjectsResponse {
+  repeated ProjectSummary projects = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  int64 total_count = 4;
+}
+
+message Project {
+  string id = 1;
+  string workspace_id = 2;
+  string name = 3;
+  string description = 4;
+  ProjectType type = 5;
+  ProjectStatus status = 6;
+  ProjectSettings settings = 7;
+  string owner_id = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  google.protobuf.Timestamp due_date = 11;
+  repeated string tags = 12;
+  ProjectPriority priority = 13;
+  int32 progress_percentage = 14;
+  map<string, google.protobuf.Any> metadata = 15;
+}
+
+enum ProjectType {
+  DOCUMENT = 0;
+  PRESENTATION = 1;
+  SPREADSHEET = 2;
+  NOTEBOOK = 3;
+  WEBSITE = 4;
+  APPLICATION = 5;
+  DATASET = 6;
+  MODEL = 7;
+  WORKFLOW = 8;
+  CUSTOM_PROJECT = 9;
+}
+
+enum ProjectStatus {
+  DRAFT = 0;
+  ACTIVE = 1;
+  COMPLETED = 2;
+  ARCHIVED = 3;
+  ON_HOLD = 4;
+  CANCELLED = 5;
+}
+
+enum ProjectPriority {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  URGENT = 3;
+}
+
+message ProjectSettings {
+  VisibilityLevel visibility = 1;
+  CollaborationSettings collaboration = 2;
+  bool allow_comments = 3;
+  bool track_changes = 4;
+  ReviewSettings review = 5;
+  AutomationSettings automation = 6;
+}
+
+message ReviewSettings {
+  bool require_review = 1;
+  int32 required_reviewers = 2;
+  repeated string reviewer_ids = 3;
+  ReviewType review_type = 4;
+}
+
+enum ReviewType {
+  PEER_REVIEW = 0;
+  EXPERT_REVIEW = 1;
+  AUTOMATED_REVIEW = 2;
+  MIXED_REVIEW = 3;
+}
+
+message AutomationSettings {
+  repeated WorkflowTrigger triggers = 1;
+  bool auto_save = 2;
+  google.protobuf.Duration auto_save_interval = 3;
+  bool auto_backup = 4;
+}
+
+message WorkflowTrigger {
+  TriggerType type = 1;
+  string condition = 2;
+  repeated WorkflowAction actions = 3;
+  bool enabled = 4;
+}
+
+enum TriggerType {
+  ON_CREATE = 0;
+  ON_UPDATE = 1;
+  ON_DELETE = 2;
+  ON_SCHEDULE = 3;
+  ON_CONDITION = 4;
+  ON_WEBHOOK = 5;
+}
+
+message WorkflowAction {
+  ActionType type = 1;
+  map<string, google.protobuf.Any> parameters = 2;
+  repeated string dependencies = 3;
+}
+
+enum ActionType {
+  SEND_NOTIFICATION = 0;
+  UPDATE_STATUS = 1;
+  ASSIGN_REVIEWER = 2;
+  CREATE_BACKUP = 3;
+  RUN_SCRIPT = 4;
+  WEBHOOK_CALL = 5;
+  EMAIL_SEND = 6;
+}
+
+// Collaboration
+message JoinCollaborationRequest {
+  string workspace_id = 1;
+  string project_id = 2;
+  string user_id = 3;
+  CollaborationMode mode = 4;
+  map<string, string> client_info = 5;
+}
+
+enum CollaborationMode {
+  VIEW_ONLY = 0;
+  EDIT = 1;
+  COMMENT = 2;
+  REVIEW = 3;
+}
+
+message CollaborationEvent {
+  string event_id = 1;
+  CollaborationEventType type = 2;
+  string user_id = 3;
+  string resource_id = 4;
+  google.protobuf.Any data = 5;
+  google.protobuf.Timestamp timestamp = 6;
+  map<string, string> metadata = 7;
+}
+
+enum CollaborationEventType {
+  USER_JOINED = 0;
+  USER_LEFT = 1;
+  CURSOR_MOVED = 2;
+  TEXT_INSERTED = 3;
+  TEXT_DELETED = 4;
+  TEXT_FORMATTED = 5;
+  COMMENT_ADDED = 6;
+  COMMENT_RESOLVED = 7;
+  SELECTION_CHANGED = 8;
+  DOCUMENT_SAVED = 9;
+  CONFLICT_DETECTED = 10;
+}
+
+message SendCollaborationEventRequest {
+  string workspace_id = 1;
+  string project_id = 2;
+  CollaborationEvent event = 3;
+}
+
+message SendCollaborationEventResponse {
+  bool success = 1;
+  string error_message = 2;
+  string event_id = 3;
+}
+
+// Activity tracking
+message GetActivityFeedRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  ActivityFilter filter = 3;
+  int32 limit = 4;
+  string cursor = 5;
+  bool include_system_events = 6;
+}
+
+message GetActivityFeedResponse {
+  repeated ActivityItem activities = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+  ActivitySummary summary = 4;
+}
+
+message LogActivityRequest {
+  string workspace_id = 1;
+  ActivityItem activity = 2;
+}
+
+message LogActivityResponse {
+  bool success = 1;
+  string error_message = 2;
+  string activity_id = 3;
+}
+
+message ActivityItem {
+  string id = 1;
+  ActivityType type = 2;
+  string actor_id = 3;
+  string resource_type = 4;
+  string resource_id = 5;
+  string action = 6;
+  string description = 7;
+  google.protobuf.Timestamp timestamp = 8;
+  map<string, google.protobuf.Any> details = 9;
+  ActivityImpact impact = 10;
+}
+
+enum ActivityType {
+  USER_ACTION = 0;
+  SYSTEM_EVENT = 1;
+  INTEGRATION_EVENT = 2;
+  AUTOMATION_EVENT = 3;
+  COLLABORATION_EVENT = 4;
+}
+
+enum ActivityImpact {
+  LOW = 0;
+  MEDIUM = 1;
+  HIGH = 2;
+  CRITICAL = 3;
+}
+
+message ActivitySummary {
+  int64 total_activities = 1;
+  map<string, int64> type_counts = 2;
+  google.protobuf.Timestamp most_recent = 3;
+  repeated string most_active_users = 4;
+}
+
+// Templates and workflows
+message CreateTemplateRequest {
+  string workspace_id = 1;
+  string creator_id = 2;
+  Template template = 3;
+}
+
+message CreateTemplateResponse {
+  string template_id = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message GetTemplatesRequest {
+  string workspace_id = 1;
+  TemplateFilter filter = 2;
+  int32 limit = 3;
+  string cursor = 4;
+}
+
+message GetTemplatesResponse {
+  repeated Template templates = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}
+
+message Template {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  TemplateType type = 4;
+  string category = 5;
+  repeated string tags = 6;
+  TemplateContent content = 7;
+  TemplateMetadata metadata = 8;
+  string creator_id = 9;
+  google.protobuf.Timestamp created_at = 10;
+  int32 usage_count = 11;
+  float rating = 12;
+}
+
+enum TemplateType {
+  PROJECT_TEMPLATE = 0;
+  DOCUMENT_TEMPLATE = 1;
+  WORKFLOW_TEMPLATE = 2;
+  WORKSPACE_TEMPLATE = 3;
+}
+
+message TemplateContent {
+  google.protobuf.Any structure = 1;
+  repeated TemplateVariable variables = 2;
+  repeated TemplateAsset assets = 3;
+}
+
+message TemplateVariable {
+  string name = 1;
+  VariableType type = 2;
+  google.protobuf.Any default_value = 3;
+  bool required = 4;
+  string description = 5;
+}
+
+enum VariableType {
+  TEXT = 0;
+  NUMBER = 1;
+  BOOLEAN = 2;
+  DATE = 3;
+  LIST = 4;
+  OBJECT = 5;
+}
+
+message TemplateAsset {
+  string name = 1;
+  string type = 2;
+  string url = 3;
+  int64 size_bytes = 4;
+  string checksum = 5;
+}
+
+message TemplateMetadata {
+  string version = 1;
+  repeated string compatible_versions = 2;
+  map<string, string> requirements = 3;
+  string documentation_url = 4;
+  string preview_url = 5;
+}
+
+// Workflow automation
+message CreateWorkflowRequest {
+  string workspace_id = 1;
+  string creator_id = 2;
+  Workflow workflow = 3;
+}
+
+message CreateWorkflowResponse {
+  string workflow_id = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message ExecuteWorkflowRequest {
+  string workflow_id = 1;
+  string executor_id = 2;
+  map<string, google.protobuf.Any> input_data = 3;
+  ExecutionMode mode = 4;
+}
+
+enum ExecutionMode {
+  SYNCHRONOUS = 0;
+  ASYNCHRONOUS = 1;
+  SCHEDULED = 2;
+}
+
+message ExecuteWorkflowResponse {
+  string execution_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  WorkflowExecution execution = 4;
+}
+
+message Workflow {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  repeated WorkflowStep steps = 4;
+  WorkflowSettings settings = 5;
+  string creator_id = 6;
+  google.protobuf.Timestamp created_at = 7;
+  WorkflowStatus status = 8;
+}
+
+enum WorkflowStatus {
+  DRAFT = 0;
+  ACTIVE = 1;
+  PAUSED = 2;
+  DEPRECATED = 3;
+}
+
+message WorkflowStep {
+  string id = 1;
+  string name = 2;
+  StepType type = 3;
+  map<string, google.protobuf.Any> configuration = 4;
+  repeated string dependencies = 5;
+  StepCondition condition = 6;
+  ErrorHandling error_handling = 7;
+}
+
+enum StepType {
+  ACTION = 0;
+  CONDITION = 1;
+  LOOP = 2;
+  PARALLEL = 3;
+  HUMAN_TASK = 4;
+  INTEGRATION = 5;
+}
+
+message StepCondition {
+  string expression = 1;
+  repeated ConditionVariable variables = 2;
+}
+
+message ConditionVariable {
+  string name = 1;
+  string source = 2;
+  string path = 3;
+}
+
+message ErrorHandling {
+  ErrorStrategy strategy = 1;
+  int32 retry_count = 2;
+  google.protobuf.Duration retry_delay = 3;
+  string fallback_step_id = 4;
+}
+
+enum ErrorStrategy {
+  FAIL_FAST = 0;
+  RETRY = 1;
+  CONTINUE = 2;
+  FALLBACK = 3;
+}
+
+message WorkflowSettings {
+  google.protobuf.Duration timeout = 1;
+  int32 max_concurrent_executions = 2;
+  bool enable_logging = 3;
+  bool enable_metrics = 4;
+  NotificationSettings notifications = 5;
+}
+
+message WorkflowExecution {
+  string id = 1;
+  string workflow_id = 2;
+  ExecutionStatus status = 3;
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp completed_at = 5;
+  repeated StepExecution step_executions = 6;
+  map<string, google.protobuf.Any> output_data = 7;
+  string error_message = 8;
+}
+
+enum ExecutionStatus {
+  PENDING = 0;
+  RUNNING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+  CANCELLED = 4;
+  TIMEOUT = 5;
+}
+
+message StepExecution {
+  string step_id = 1;
+  ExecutionStatus status = 2;
+  google.protobuf.Timestamp started_at = 3;
+  google.protobuf.Timestamp completed_at = 4;
+  map<string, google.protobuf.Any> input_data = 5;
+  map<string, google.protobuf.Any> output_data = 6;
+  string error_message = 7;
+  int32 retry_count = 8;
+}
+
+// Filter and utility messages
+message WorkspaceFilter {
+  repeated WorkspaceType types = 1;
+  repeated WorkspaceStatus statuses = 2;
+  string name_filter = 3;
+  repeated string tags = 4;
+  google.protobuf.Timestamp created_after = 5;
+  google.protobuf.Timestamp created_before = 6;
+}
+
+message MemberFilter {
+  repeated Role roles = 1;
+  repeated MemberStatus statuses = 2;
+  string name_filter = 3;
+  google.protobuf.Timestamp joined_after = 4;
+  google.protobuf.Timestamp joined_before = 5;
+}
+
+message ProjectFilter {
+  repeated ProjectType types = 1;
+  repeated ProjectStatus statuses = 2;
+  string name_filter = 3;
+  repeated string tags = 4;
+  repeated ProjectPriority priorities = 5;
+  google.protobuf.Timestamp created_after = 6;
+  google.protobuf.Timestamp created_before = 7;
+}
+
+message ActivityFilter {
+  repeated ActivityType types = 1;
+  repeated string actor_ids = 2;
+  repeated string resource_types = 3;
+  google.protobuf.Timestamp after = 4;
+  google.protobuf.Timestamp before = 5;
+}
+
+message TemplateFilter {
+  repeated TemplateType types = 1;
+  string category = 2;
+  repeated string tags = 3;
+  string creator_id = 4;
+  float min_rating = 5;
+}
+
+message SortOptions {
+  SortField field = 1;
+  SortDirection direction = 2;
+}
+
+enum SortField {
+  CREATED_AT = 0;
+  UPDATED_AT = 1;
+  NAME = 2;
+  LAST_ACTIVITY = 3;
+  MEMBER_COUNT = 4;
+  PROJECT_COUNT = 5;
+}
+
+enum SortDirection {
+  ASC = 0;
+  DESC = 1;
+}
+
+// Summary and stats messages
+message WorkspaceSummary {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  WorkspaceType type = 4;
+  WorkspaceStatus status = 5;
+  int32 member_count = 6;
+  int32 project_count = 7;
+  google.protobuf.Timestamp last_activity = 8;
+  Role user_role = 9;
+}
+
+message ProjectSummary {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  ProjectType type = 4;
+  ProjectStatus status = 5;
+  ProjectPriority priority = 6;
+  int32 progress_percentage = 7;
+  google.protobuf.Timestamp due_date = 8;
+  int32 member_count = 9;
+  google.protobuf.Timestamp last_activity = 10;
+}
+
+message WorkspaceStats {
+  int32 total_members = 1;
+  int32 total_projects = 2;
+  int32 active_projects = 3;
+  int64 total_storage_used = 4;
+  google.protobuf.Timestamp last_activity = 5;
+  map<string, int32> project_types = 6;
+  map<string, int32> member_roles = 7;
+}
+
+message ProjectStats {
+  int32 total_resources = 1;
+  int32 total_comments = 2;
+  int32 total_revisions = 3;
+  google.protobuf.Timestamp last_activity = 4;
+  int32 active_collaborators = 5;
+  map<string, int32> resource_types = 6;
+}
+
+message UserPermissions {
+  repeated Permission permissions = 1;
+  bool can_invite_members = 2;
+  bool can_create_projects = 3;
+  bool can_modify_settings = 4;
+  bool can_delete_workspace = 5;
+  bool can_export_data = 6;
+}
+
+// Update messages
+message WorkspaceUpdate {
+  optional string name = 1;
+  optional string description = 2;
+  optional WorkspaceSettings settings = 3;
+  optional string avatar_url = 4;
+  repeated string tags = 5;
+}
+
+message ProjectUpdate {
+  optional string name = 1;
+  optional string description = 2;
+  optional ProjectStatus status = 3;
+  optional ProjectPriority priority = 4;
+  optional google.protobuf.Timestamp due_date = 5;
+  optional int32 progress_percentage = 6;
+  repeated string tags = 7;
+  optional ProjectSettings settings = 8;
+}
+
+// Resource management
+message ManageResourceRequest {
+  string workspace_id = 1;
+  string project_id = 2;
+  ResourceOperation operation = 3;
+  ProjectResource resource = 4;
+  string user_id = 5;
+}
+
+enum ResourceOperation {
+  CREATE = 0;
+  UPDATE = 1;
+  DELETE = 2;
+  MOVE = 3;
+  COPY = 4;
+}
+
+message ManageResourceResponse {
+  bool success = 1;
+  string error_message = 2;
+  ProjectResource resource = 3;
+}
+
+message GetResourceUsageRequest {
+  string workspace_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+  UsageGranularity granularity = 4;
+}
+
+enum UsageGranularity {
+  HOURLY = 0;
+  DAILY = 1;
+  WEEKLY = 2;
+  MONTHLY = 3;
+}
+
+message GetResourceUsageResponse {
+  ResourceUsage current_usage = 1;
+  repeated UsageDataPoint usage_history = 2;
+  ResourceLimits limits = 3;
+  repeated UsageAlert alerts = 4;
+}
+
+message UsageDataPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  ResourceUsage usage = 2;
+}
+
+message UsageAlert {
+  AlertType type = 1;
+  string message = 2;
+  AlertSeverity severity = 3;
+  google.protobuf.Timestamp triggered_at = 4;
+  string resource_type = 5;
+}
+
+enum AlertType {
+  QUOTA_WARNING = 0;
+  QUOTA_EXCEEDED = 1;
+  UNUSUAL_ACTIVITY = 2;
+  COST_THRESHOLD = 3;
+}
+
+enum AlertSeverity {
+  INFO = 0;
+  WARNING = 1;
+  ERROR = 2;
+  CRITICAL = 3;
+}
+
+message ProjectResource {
+  string id = 1;
+  string name = 2;
+  ResourceType type = 3;
+  string path = 4;
+  int64 size_bytes = 5;
+  string mime_type = 6;
+  string created_by = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp modified_at = 9;
+  ResourcePermissions permissions = 10;
+  map<string, google.protobuf.Any> metadata = 11;
+}
+
+enum ResourceType {
+  FILE = 0;
+  FOLDER = 1;
+  LINK = 2;
+  EMBEDDED = 3;
+  GENERATED = 4;
+}
+
+message ResourcePermissions {
+  bool public_read = 1;
+  bool public_write = 2;
+  repeated ResourcePermission user_permissions = 3;
+}
+
+message ResourcePermission {
+  string user_id = 1;
+  repeated Action actions = 2;
+  google.protobuf.Timestamp granted_at = 3;
+}
+
+message ResourceSpec {
+  string name = 1;
+  ResourceType type = 2;
+  google.protobuf.Any content = 3;
+  map<string, string> metadata = 4;
+}
+
+// Integration management
+message CreateIntegrationRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  Integration integration = 3;
+}
+
+message CreateIntegrationResponse {
+  string integration_id = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message GetIntegrationsRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  IntegrationFilter filter = 3;
+}
+
+message GetIntegrationsResponse {
+  repeated Integration integrations = 1;
+  repeated IntegrationTemplate available_templates = 2;
+}
+
+message Integration {
+  string id = 1;
+  string name = 2;
+  IntegrationType type = 3;
+  IntegrationStatus status = 4;
+  map<string, google.protobuf.Any> configuration = 5;
+  IntegrationSettings settings = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp last_sync = 8;
+  string created_by = 9;
+}
+
+enum IntegrationStatus {
+  INACTIVE = 0;
+  ACTIVE = 1;
+  ERROR = 2;
+  SYNCING = 3;
+  PAUSED = 4;
+}
+
+message IntegrationTemplate {
+  string id = 1;
+  string name = 2;
+  IntegrationType type = 3;
+  string description = 4;
+  repeated ConfigurationField configuration_fields = 5;
+  IntegrationCapabilities capabilities = 6;
+}
+
+message ConfigurationField {
+  string name = 1;
+  string type = 2;
+  bool required = 3;
+  string description = 4;
+  google.protobuf.Any default_value = 5;
+}
+
+message IntegrationCapabilities {
+  bool supports_real_time = 1;
+  bool supports_batch = 2;
+  bool supports_webhooks = 3;
+  repeated string supported_events = 4;
+  repeated string required_permissions = 5;
+}
+
+message IntegrationFilter {
+  repeated IntegrationType types = 1;
+  repeated IntegrationStatus statuses = 2;
+  string name_filter = 3;
+}

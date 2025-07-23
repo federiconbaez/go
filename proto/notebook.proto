@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package notebook;
-option go_package = "github.com/fbaez/grpc-go-android/proto;notebook";
+option go_package = https://github.com/federiconbaez/gogrpc-go-android/proto;notebook";
 option java_multiple_files = true;
 option java_package = "com.example.notebook.grpc";
 
