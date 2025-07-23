@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package helloworld;
+
+// El servicio de saludo simple
+grpc service Greeter {
+  // Envía un saludo
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+}
+
+// Mensaje de solicitud
+message HelloRequest {
+  string name = 1;
+}
+
+// Mensaje de respuesta
+message HelloReply {
+  string message = 1;
+} 
